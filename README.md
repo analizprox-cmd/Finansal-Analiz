@@ -358,7 +358,7 @@
 
         // Firebase Configuration - UPDATED
         const firebaseConfig = {
-            apiKey: "AIzaSyDp2Yh8hamXi6OTfw03MT0S4rp5CjnlAcg",
+            apiKey: "AIzaSyBh-VdQ1mLeI7lUd8f_OFcekAfmNp2G6gk",
             authDomain: "analizprox-62e8d.firebaseapp.com",
             projectId: "analizprox-62e8d",
             databaseURL: "https://analizprox-62e8d-default-rtdb.europe-west1.firebasedatabase.app/",

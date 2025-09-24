@@ -80,8 +80,24 @@
 
             <!-- Login Form -->
             <div id="loginForm" class="space-y-2">
+                <!-- Google Priority Warning -->
+                <div class="bg-blue-50 border border-blue-300 rounded p-2 mb-3">
+                    <div class="flex items-start space-x-2">
+                        <span class="text-blue-600">🔑</span>
+                        <div class="flex-1">
+                            <h3 class="text-xs font-bold text-blue-800 mb-1">Önerilen Giriş</h3>
+                            <p class="text-xs text-blue-700">
+                                <strong>Google ile giriş yapmanız önerilir!</strong><br>
+                                • Daha güvenli ve hızlı<br>
+                                • Şifre unutma sorunu yok<br>
+                                • Otomatik hesap koruması
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
                 <button id="googleSignInBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-xs flex items-center justify-center space-x-2">
-                    <span>🔑 Google ile Giriş</span>
+                    <span>🔑 Google ile Giriş (Önerilen)</span>
                 </button>
                 
                 <div class="text-center text-xs text-gray-500">veya</div>
@@ -97,6 +113,22 @@
 
             <!-- Register Form -->
             <div id="registerForm" class="space-y-2 hidden">
+                <!-- Google Priority Warning for Registration -->
+                <div class="bg-orange-50 border border-orange-300 rounded p-2 mb-3">
+                    <div class="flex items-start space-x-2">
+                        <span class="text-orange-600">⚠️</span>
+                        <div class="flex-1">
+                            <h3 class="text-xs font-bold text-orange-800 mb-1">Dikkat!</h3>
+                            <p class="text-xs text-orange-700">
+                                <strong>Önce Google ile giriş yapmanız önerilir!</strong><br>
+                                • Şirket kaydı yapmadan önce Google hesabınızla deneyin<br>
+                                • Daha güvenli ve pratik<br>
+                                • Şifre yönetimi gerektirmez
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
                 <form id="companyRegisterForm" class="space-y-2">
                     <input type="text" id="registerCompanyName" placeholder="Şirket Adı *" required class="w-full compact-input border rounded">
                     <input type="email" id="registerEmail" placeholder="E-posta Adresi *" required class="w-full compact-input border rounded">
@@ -474,29 +506,27 @@
                 return;
             }
             
-            // Check if company already exists
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Kaydediliyor...';
+            
             try {
-                const existingCompany = await db.collection('companies').where('companyName', '==', companyName).get();
-                if (!existingCompany.empty) {
+                // Check if company already exists in localStorage
+                const companies = JSON.parse(localStorage.getItem('companies') || '{}');
+                const companyId = companyName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+                
+                if (companies[companyId]) {
                     alert('⚠️ Bu şirket adı zaten kayıtlı! Lütfen farklı bir ad seçin.');
                     return;
                 }
                 
-                const existingEmail = await db.collection('companies').where('email', '==', email).get();
-                if (!existingEmail.empty) {
+                // Check email
+                const existingEmail = Object.values(companies).find(comp => comp.email === email);
+                if (existingEmail) {
                     alert('⚠️ Bu e-posta adresi zaten kayıtlı!');
                     return;
                 }
-            } catch (error) {
-                console.log('Offline mode - skipping duplicate check');
-            }
-            
-            try {
-                const submitBtn = e.target.querySelector('button[type="submit"]');
-                submitBtn.disabled = true;
-                submitBtn.textContent = 'Kaydediliyor...';
                 
-                const companyId = companyName.toLowerCase().replace(/[^a-z0-9]/g, '_');
                 const companyData = {
                     companyName,
                     email,
@@ -510,14 +540,15 @@
                     loginMethod: 'company'
                 };
                 
-                // Save to Firebase (if available) or localStorage
+                // Save to localStorage
+                companies[companyId] = companyData;
+                localStorage.setItem('companies', JSON.stringify(companies));
+                
+                // Also try Firebase if available
                 try {
                     await db.collection('companies').doc(companyId).set(companyData);
                 } catch (error) {
-                    // Fallback to localStorage for demo
-                    const companies = JSON.parse(localStorage.getItem('companies') || '{}');
-                    companies[companyId] = companyData;
-                    localStorage.setItem('companies', JSON.stringify(companies));
+                    console.log('Firebase not available, saved to localStorage only');
                 }
                 
                 alert(`🎉 ${companyName} başarıyla kaydedildi!\n\n📧 E-posta: ${email}\n🏢 Şirket: ${companyName}\n\nŞimdi giriş yapabilirsiniz.`);
@@ -531,7 +562,6 @@
                 console.error('Registration error:', error);
                 alert('❌ Kayıt hatası: ' + error.message);
             } finally {
-                const submitBtn = e.target.querySelector('button[type="submit"]');
                 submitBtn.disabled = false;
                 submitBtn.textContent = '🏢 Şirket Kaydı Oluştur';
             }
@@ -1463,5 +1493,5 @@ Türkçe, kısa ve net yanıt ver.
         window.viewCompanyFinancials = viewCompanyFinancials;
         window.deleteCompany = deleteCompany;
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'984171db77efd617',t:'MTc1ODcwODEzMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98417ed5229d23b1',t:'MTc1ODcwODY2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

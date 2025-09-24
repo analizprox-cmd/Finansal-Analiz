@@ -196,7 +196,7 @@
                                     <div class="block bg-green-600 w-10 h-5 rounded-full"></div>
                                     <div class="dot absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition"></div>
                                 </div>
-                                <span class="ml-1 text-xs">🤖 AI</span>
+                                <span class="ml-1 text-xs">🤖 Akça AI</span>
                             </label>
                         </div>
                     </div>
@@ -236,7 +236,7 @@
                     </div>
                     
                     <button id="saveDataBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded font-semibold text-xs mt-3">
-                        💾 Kaydet ve AI Analizi Yap
+                        💾 Kaydet ve Akça Pro X AI Analizi Yap
                     </button>
                 </div>
 
@@ -388,7 +388,7 @@
 
         // Gemini AI Configuration
         const GEMINI_API_KEY = 'AIzaSyAF8ZcI4lYPjnojma094lo_orSfX8I9Fh8';
-        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+        const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
         // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
@@ -1078,6 +1078,7 @@
         // AI Analysis
         async function callGeminiAI(prompt) {
             try {
+                // Gemini 1.5 Flash model kullan
                 const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
                     headers: { 
@@ -1109,48 +1110,49 @@
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('Gemini API Error:', response.status, errorText);
-                    throw new Error(`API Hatası (${response.status}): ${errorText}`);
+                    console.error('Akça Pro X AI Error:', response.status, errorText);
+                    throw new Error(`AI API Hatası (${response.status}): ${errorText}`);
                 }
                 
                 const data = await response.json();
                 
                 if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                     const analysisText = data.candidates[0].content.parts[0].text;
-                    console.log('✅ Gemini AI analizi başarılı');
+                    console.log('✅ Akça Pro X AI analizi başarılı');
                     return analysisText;
                 } else {
-                    console.error('Gemini Response Error:', data);
+                    console.error('Akça Pro X AI Response Error:', data);
                     throw new Error('AI yanıtı format hatası');
                 }
                 
             } catch (error) {
-                console.error('AI Analysis Error:', error);
+                console.error('Akça Pro X AI Analysis Error:', error);
                 
                 // Fallback analysis
-                return `⚠️ AI analizi şu anda kullanılamıyor (${error.message})
+                return `⚠️ Akça Pro X AI analizi şu anda kullanılamıyor (${error.message})
                 
-📊 TEMEL DEĞERLENDİRME:
-Bu durumda manuel finansal analiz gerekiyor. Lütfen aşağıdaki temel metrikleri kontrol edin:
+📊 MANUEL FİNANSAL DEĞERLENDİRME:
+Akça Pro X AI geçici olarak kullanılamadığında manuel analiz yapılır.
 
-💰 KARLILIK:
-• Net kâr marjı %15'in üzerinde ise mükemmel
-• %10-15 arası ise iyi seviyede
-• %5-10 arası ise ortalama
-• %5'in altında ise dikkat gerekli
+💰 KARLILIK DEĞERLENDİRMESİ:
+• Net kâr marjı %15'in üzerinde ise mükemmel performans
+• %10-15 arası ise iyi seviyede kârlılık
+• %5-10 arası ise ortalama performans
+• %5'in altında ise dikkat gereken alan
 
-💧 LİKİDİTE:
+💧 LİKİDİTE DURUMU:
 • Cari oran 2'nin üzerinde ise güçlü likidite
-• 1.5-2 arası ise sağlıklı
-• 1-1.5 arası ise kabul edilebilir
-• 1'in altında ise risk var
+• 1.5-2 arası ise sağlıklı likidite
+• 1-1.5 arası ise kabul edilebilir seviye
+• 1'in altında ise likidite riski mevcut
 
-⚖️ BORÇLULUK:
+⚖️ BORÇLULUK ANALİZİ:
 • Borç/Özkaynak oranı 0.5'in altında ise düşük borçluluk
-• 0.5-1 arası ise orta seviye
-• 1'in üzerinde ise yüksek borçluluk
+• 0.5-1 arası ise orta seviye risk
+• 1'in üzerinde ise yüksek borçluluk riski
 
-🔧 Detaylı analiz için AI servisinin yeniden çalışması bekleniyor...`;
+🔧 Detaylı Akça Pro X AI analizi için servisin yeniden çalışması bekleniyor...
+📞 Destek: AI servisi restore ediliyor, lütfen tekrar deneyin.`;
             }
         }
 
@@ -1335,7 +1337,7 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                                 <div class="flex items-center space-x-2">
                                     <span class="text-2xl">🤖</span>
                                     <div>
-                                        <h3 class="text-sm font-bold text-blue-900">Gemini AI Finansal Analizi</h3>
+                                        <h3 class="text-sm font-bold text-blue-900">Akça Pro X AI Finansal Analizi</h3>
                                         <p class="text-xs text-blue-700">Google AI ile Güçlendirilmiş Profesyonel Analiz</p>
                                     </div>
                                 </div>
@@ -1344,7 +1346,7 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                                         <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
                                         Aktif
                                     </span>
-                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Gemini Pro</span>
+                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Akça Pro X</span>
                                 </div>
                             </div>
                             <div class="bg-white rounded-lg p-3 border border-blue-200 shadow-sm">
@@ -1760,11 +1762,11 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                 
                 const saveBtn = document.getElementById('saveDataBtn');
                 if (aiAnalysisEnabled) {
-                    saveBtn.textContent = '💾 Kaydet ve AI Analizi Yap';
+                    saveBtn.textContent = '💾 Kaydet ve Akça Pro X AI Analizi Yap';
                     saveBtn.classList.remove('bg-gray-600');
                     saveBtn.classList.add('bg-green-600');
                 } else {
-                    saveBtn.textContent = '💾 Kaydet (AI Kapalı)';
+                    saveBtn.textContent = '💾 Kaydet (Akça AI Kapalı)';
                     saveBtn.classList.remove('bg-green-600');
                     saveBtn.classList.add('bg-gray-600');
                 }

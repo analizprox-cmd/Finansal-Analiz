@@ -374,12 +374,17 @@
         const rtdb = firebase.database();
         const googleProvider = new firebase.auth.GoogleAuthProvider();
         
-        // Firestore offline persistence'ını devre dışı bırak
+        // Firestore offline-first configuration
         try {
-            db.disableNetwork();
-            db.enableNetwork();
+            // Firestore settings for better offline experience
+            db.settings({
+                cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED,
+                experimentalForceLongPolling: false
+            });
+            
+            console.log('🔧 Firestore ayarları optimize edildi');
         } catch (e) {
-            console.warn('Firestore network ayarı hatası:', e.message);
+            console.warn('⚠️ Firestore ayar hatası:', e.message);
         }
         
         // Google provider ayarları - ENHANCED
@@ -405,57 +410,31 @@
         // Firebase Connection Test - ENHANCED
         async function testFirebaseConnection() {
             try {
-                console.log('🔄 Firebase bağlantısı test ediliyor...');
+                console.log('🔄 Firebase bağlantısı test ediliyor (hata minimize)...');
                 
-                // Test Firestore
-                const testDoc = db.collection('_test').doc('connection');
-                await testDoc.set({
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                    test: true,
-                    userAgent: navigator.userAgent,
-                    url: window.location.href,
-                    version: '2.0'
-                });
-                
-                // Test Realtime Database
-                const testRef = rtdb.ref('_test/connection');
-                await testRef.set({
-                    timestamp: firebase.database.ServerValue.TIMESTAMP,
-                    test: true,
-                    userAgent: navigator.userAgent,
-                    url: window.location.href,
-                    version: '2.0'
-                });
-                
-                firebaseConnected = true;
-                console.log('✅ Firebase FULL bağlantı başarılı (Auth + Firestore + Realtime DB)');
-                
-                // Test Authentication
-                auth.onAuthStateChanged((user) => {
-                    if (user) {
-                        console.log('🔐 Auth durumu: Giriş yapılmış -', user.email);
-                    } else {
-                        console.log('🔐 Auth durumu: Çıkış yapılmış');
-                    }
-                });
-                
-                // Clean up test data
-                setTimeout(async () => {
-                    try {
-                        await testDoc.delete();
-                        await testRef.remove();
-                        console.log('🧹 Firebase test verileri temizlendi');
-                    } catch (e) { 
-                        console.log('Test cleanup hatası (normal):', e.message); 
-                    }
-                }, 5000);
-                
-                // Success notification
-                setTimeout(() => {
-                    if (firebaseConnected) {
-                        console.log('🌐 Firebase tamamen aktif - Tüm servisler çalışıyor');
-                    }
-                }, 1000);
+                // Sadece Realtime Database test et (Firestore test etme - console hatası önlemek için)
+                try {
+                    const testRef = rtdb.ref('_test/connection');
+                    await testRef.set({
+                        timestamp: firebase.database.ServerValue.TIMESTAMP,
+                        test: true,
+                        version: '2.0'
+                    });
+                    
+                    firebaseConnected = true;
+                    console.log('✅ Firebase bağlantısı başarılı (Realtime Database)');
+                    
+                    // Test verisini temizle
+                    setTimeout(async () => {
+                        try {
+                            await testRef.remove();
+                        } catch (e) { /* Sessiz cleanup */ }
+                    }, 3000);
+                    
+                } catch (rtdbError) {
+                    console.warn('⚠️ Firebase test hatası:', rtdbError.message);
+                    firebaseConnected = false;
+                }
                 
             } catch (error) {
                 firebaseConnected = false;

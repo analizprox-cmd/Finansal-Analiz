@@ -9,6 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
@@ -80,24 +81,8 @@
 
             <!-- Login Form -->
             <div id="loginForm" class="space-y-2">
-                <!-- Google Priority Warning -->
-                <div class="bg-blue-50 border border-blue-300 rounded p-2 mb-3">
-                    <div class="flex items-start space-x-2">
-                        <span class="text-blue-600">🔑</span>
-                        <div class="flex-1">
-                            <h3 class="text-xs font-bold text-blue-800 mb-1">Önerilen Giriş</h3>
-                            <p class="text-xs text-blue-700">
-                                <strong>Google ile giriş yapmanız önerilir!</strong><br>
-                                • Daha güvenli ve hızlı<br>
-                                • Şifre unutma sorunu yok<br>
-                                • Otomatik hesap koruması
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
                 <button id="googleSignInBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-xs flex items-center justify-center space-x-2">
-                    <span>🔑 Google ile Giriş (Önerilen)</span>
+                    <span>🔑 Google ile Giriş</span>
                 </button>
                 
                 <div class="text-center text-xs text-gray-500">veya</div>
@@ -107,28 +92,10 @@
                     <input type="password" id="loginPassword" placeholder="Şifre" required class="w-full compact-input border rounded">
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-xs">Şirket Girişi</button>
                 </form>
-                
-
             </div>
 
             <!-- Register Form -->
             <div id="registerForm" class="space-y-2 hidden">
-                <!-- Google Priority Warning for Registration -->
-                <div class="bg-orange-50 border border-orange-300 rounded p-2 mb-3">
-                    <div class="flex items-start space-x-2">
-                        <span class="text-orange-600">⚠️</span>
-                        <div class="flex-1">
-                            <h3 class="text-xs font-bold text-orange-800 mb-1">Dikkat!</h3>
-                            <p class="text-xs text-orange-700">
-                                <strong>Önce Google ile giriş yapmanız önerilir!</strong><br>
-                                • Şirket kaydı yapmadan önce Google hesabınızla deneyin<br>
-                                • Daha güvenli ve pratik<br>
-                                • Şifre yönetimi gerektirmez
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
                 <form id="companyRegisterForm" class="space-y-2">
                     <input type="text" id="registerCompanyName" placeholder="Şirket Adı *" required class="w-full compact-input border rounded">
                     <input type="email" id="registerEmail" placeholder="E-posta Adresi *" required class="w-full compact-input border rounded">
@@ -341,9 +308,10 @@
         // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAF8ZcI4lYPjnojma094lo_orSfX8I9Fh8",
-            authDomain: "finansal-analiz-platform.firebaseapp.com",
-            projectId: "finansal-analiz-platform",
-            storageBucket: "finansal-analiz-platform.appspot.com",
+            authDomain: "analizprox-62e8d.firebaseapp.com",
+            projectId: "analizprox-62e8d",
+            databaseURL: "https://analizprox-62e8d-default-rtdb.europe-west1.firebasedatabase.app/",
+            storageBucket: "analizprox-62e8d.appspot.com",
             messagingSenderId: "123456789012",
             appId: "1:123456789012:web:abcdef123456"
         };
@@ -351,6 +319,7 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        const rtdb = firebase.database(); // Realtime Database
         const googleProvider = new firebase.auth.GoogleAuthProvider();
 
         // Global Variables
@@ -361,6 +330,61 @@
         let userProfile = null;
         let aiAnalysisEnabled = true;
         let previousData = null;
+        let firebaseConnected = false;
+
+        // Firebase Connection Test
+        async function testFirebaseConnection() {
+            try {
+                console.log('🔄 Firebase bağlantısı test ediliyor...');
+                
+                // Test Firestore
+                await db.collection('_test').doc('connection').set({
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    test: true,
+                    userAgent: navigator.userAgent,
+                    url: window.location.href
+                });
+                
+                // Test Realtime Database
+                await rtdb.ref('_test/connection').set({
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    test: true,
+                    userAgent: navigator.userAgent,
+                    url: window.location.href
+                });
+                
+                firebaseConnected = true;
+                console.log('✅ Firebase bağlantısı başarılı (Firestore + Realtime DB)');
+                
+                // Test verilerini temizle
+                setTimeout(async () => {
+                    try {
+                        await db.collection('_test').doc('connection').delete();
+                        await rtdb.ref('_test').remove();
+                        console.log('🧹 Firebase test verileri temizlendi');
+                    } catch (e) { 
+                        console.log('Test verisi temizleme hatası (normal):', e.message); 
+                    }
+                }, 5000);
+                
+                // Başarılı bağlantıyı kullanıcıya bildir
+                setTimeout(() => {
+                    if (firebaseConnected) {
+                        console.log('🔗 Firebase aktif - Veriler cloud\'da saklanacak');
+                    }
+                }, 1000);
+                
+            } catch (error) {
+                firebaseConnected = false;
+                console.warn('🔴 Firebase bağlantısı yok, localStorage kullanılacak');
+                console.warn('Detay:', error.message);
+                
+                // Offline mod bildirimi
+                setTimeout(() => {
+                    console.log('💾 Offline mod aktif - Veriler yerel olarak saklanacak');
+                }, 1000);
+            }
+        }
 
         // Gemini AI Configuration
         const GEMINI_API_KEY = 'AIzaSyAF8ZcI4lYPjnojma094lo_orSfX8I9Fh8';
@@ -424,14 +448,16 @@
             document.getElementById('loginTab').classList.remove('bg-blue-600', 'text-white');
         });
 
-        // Google Sign In (Demo Mode)
+        // Google Sign In - UYARI İLE
         googleSignInBtn.addEventListener('click', async () => {
             const termsAccepted = document.getElementById('termsAccepted');
             if (!termsAccepted.checked) {
-                alert('⚠️ Lütfen şartları okuyup onaylayın!');
+                alert('⚠️ Lütfen önce şartları okuyup onaylayın!');
                 termsAccepted.focus();
                 return;
             }
+            
+            // Google ile giriş işlemi devam ediyor
             
             // Demo Google Login
             const demoEmail = 'demo@gmail.com';
@@ -474,6 +500,10 @@
         // Company Registration
         document.getElementById('companyRegisterForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // ÖNCE GOOGLE UYARISI
+            alert('⚠️ UYARI!\n\nLütfen önce Google ile giriş yapınız!\n\n🔑 Google ile giriş yapmadan şirket kaydı yapılamaz.\nSistem sadece Google hesabıyla çalışmaktadır.');
+            return;
             
             const termsAccepted = document.getElementById('termsAccepted');
             if (!termsAccepted.checked) {
@@ -546,9 +576,15 @@
                 
                 // Also try Firebase if available
                 try {
-                    await db.collection('companies').doc(companyId).set(companyData);
+                    if (firebaseConnected) {
+                        console.log('🏢 Şirket verisi Firebase\'e kaydediliyor...');
+                        // Save to both Firestore and Realtime Database
+                        await db.collection('companies').doc(companyId).set(companyData);
+                        await rtdb.ref(`companies/${companyId}`).set(companyData);
+                        console.log('✅ Şirket Firebase\'e kaydedildi (Firestore + Realtime DB)');
+                    }
                 } catch (error) {
-                    console.log('Firebase not available, saved to localStorage only');
+                    console.warn('Firebase şirket kayıt hatası, sadece localStorage kullanıldı:', error.message);
                 }
                 
                 alert(`🎉 ${companyName} başarıyla kaydedildi!\n\n📧 E-posta: ${email}\n🏢 Şirket: ${companyName}\n\nŞimdi giriş yapabilirsiniz.`);
@@ -570,6 +606,10 @@
         // Company Login
         document.getElementById('companyLoginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // ÖNCE GOOGLE UYARISI
+            alert('⚠️ UYARI!\n\nLütfen önce Google ile giriş yapınız!\n\n🔑 Google ile giriş yapmadan şirket girişi yapılamaz.\nSistem sadece Google hesabıyla çalışmaktadır.');
+            return;
             
             const termsAccepted = document.getElementById('termsAccepted');
             if (!termsAccepted.checked) {
@@ -615,13 +655,23 @@
                 const companyId = companyName.toLowerCase().replace(/[^a-z0-9]/g, '_');
                 let companyData = null;
                 
-                // Try Firebase first
+                // Try Firebase first (Firestore then Realtime DB)
                 try {
-                    const doc = await db.collection('companies').doc(companyId).get();
-                    if (doc.exists) {
-                        companyData = doc.data();
+                    if (firebaseConnected) {
+                        // Try Firestore first
+                        const doc = await db.collection('companies').doc(companyId).get();
+                        if (doc.exists) {
+                            companyData = doc.data();
+                        } else {
+                            // Try Realtime Database
+                            const snapshot = await rtdb.ref(`companies/${companyId}`).once('value');
+                            if (snapshot.exists()) {
+                                companyData = snapshot.val();
+                            }
+                        }
                     }
                 } catch (error) {
+                    console.warn('Firebase company giriş hatası:', error.message);
                     // Fallback to localStorage
                     const companies = JSON.parse(localStorage.getItem('companies') || '{}');
                     companyData = companies[companyId];
@@ -644,9 +694,13 @@
                 
                 // Update last login
                 try {
-                    await db.collection('companies').doc(companyId).update({
-                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    if (firebaseConnected) {
+                        // Update in both Firestore and Realtime Database
+                        await db.collection('companies').doc(companyId).update({
+                            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                        await rtdb.ref(`companies/${companyId}/lastLogin`).set(firebase.database.ServerValue.TIMESTAMP);
+                    }
                 } catch (error) {
                     // Update localStorage
                     const companies = JSON.parse(localStorage.getItem('companies') || '{}');
@@ -771,15 +825,34 @@
                         companyName: userProfile?.companyName || 'Bilinmeyen Şirket'
                     };
                     
-                    // Try Firebase first
+                    // Try Firebase first (both Firestore and Realtime DB)
                     try {
-                        await db.collection('financialData').doc(currentUser).set({
-                            ...saveData,
-                            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                        });
+                        if (firebaseConnected) {
+                            console.log('💾 Veriler Firebase\'e kaydediliyor...');
+                            
+                            // Save to Firestore
+                            await db.collection('financialData').doc(currentUser).set({
+                                ...saveData,
+                                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                            });
+                            
+                            // Save to Realtime Database as backup
+                            await rtdb.ref(`financialData/${currentUser}`).set(saveData);
+                            
+                            console.log('✅ Firebase (Firestore + Realtime DB) kayıt başarılı');
+                            
+                            // Başarı bildirimi ekle
+                            setTimeout(() => {
+                                console.log('☁️ Verileriniz güvenle cloud\'da saklandı');
+                            }, 500);
+                        } else {
+                            throw new Error('Firebase bağlantısı yok');
+                        }
                     } catch (error) {
+                        console.warn('⚠️ Firebase hatası, localStorage kullanılıyor:', error.message);
                         // Fallback to localStorage
                         localStorage.setItem(`financialData_${currentUser}`, JSON.stringify(saveData));
+                        console.log('💾 Veriler yerel olarak kaydedildi (localStorage)');
                     }
                 }
                 
@@ -816,18 +889,31 @@
             try {
                 let data = null;
                 
-                // Try Firebase first
+                // Try Firebase first (Firestore then Realtime DB)
                 try {
-                    const docRef = db.collection('financialData').doc(currentUser);
-                    const doc = await docRef.get();
-                    if (doc.exists) {
-                        data = doc.data();
+                    if (firebaseConnected) {
+                        // Try Firestore first
+                        const docRef = db.collection('financialData').doc(currentUser);
+                        const doc = await docRef.get();
+                        if (doc.exists) {
+                            data = doc.data();
+                            console.log('📊 Firestore\'dan veri yüklendi');
+                        } else {
+                            // Try Realtime Database
+                            const snapshot = await rtdb.ref(`financialData/${currentUser}`).once('value');
+                            if (snapshot.exists()) {
+                                data = snapshot.val();
+                                console.log('📊 Realtime DB\'dan veri yüklendi');
+                            }
+                        }
                     }
                 } catch (error) {
+                    console.warn('Firebase yükleme hatası:', error.message);
                     // Fallback to localStorage
                     const localData = localStorage.getItem(`financialData_${currentUser}`);
                     if (localData) {
                         data = JSON.parse(localData);
+                        console.log('📊 localStorage\'dan veri yüklendi');
                     }
                 }
                 
@@ -994,47 +1080,154 @@
             try {
                 const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }],
-                        generationConfig: { temperature: 0.7, maxOutputTokens: 1024 }
+                        contents: [{ 
+                            parts: [{ text: prompt }] 
+                        }],
+                        generationConfig: { 
+                            temperature: 0.7, 
+                            maxOutputTokens: 2048,
+                            topP: 0.8,
+                            topK: 40
+                        },
+                        safetySettings: [
+                            {
+                                category: "HARM_CATEGORY_HARASSMENT",
+                                threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                            },
+                            {
+                                category: "HARM_CATEGORY_HATE_SPEECH", 
+                                threshold: "BLOCK_MEDIUM_AND_ABOVE"
+                            }
+                        ]
                     })
                 });
 
-                if (!response.ok) throw new Error(`AI API Error: ${response.status}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Gemini API Error:', response.status, errorText);
+                    throw new Error(`API Hatası (${response.status}): ${errorText}`);
+                }
+                
                 const data = await response.json();
-                return data.candidates?.[0]?.content?.parts?.[0]?.text || 'AI yanıtı alınamadı';
+                
+                if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                    const analysisText = data.candidates[0].content.parts[0].text;
+                    console.log('✅ Gemini AI analizi başarılı');
+                    return analysisText;
+                } else {
+                    console.error('Gemini Response Error:', data);
+                    throw new Error('AI yanıtı format hatası');
+                }
+                
             } catch (error) {
-                console.error('AI error:', error);
-                return `⚠️ AI analizi kullanılamıyor: ${error.message}`;
+                console.error('AI Analysis Error:', error);
+                
+                // Fallback analysis
+                return `⚠️ AI analizi şu anda kullanılamıyor (${error.message})
+                
+📊 TEMEL DEĞERLENDİRME:
+Bu durumda manuel finansal analiz gerekiyor. Lütfen aşağıdaki temel metrikleri kontrol edin:
+
+💰 KARLILIK:
+• Net kâr marjı %15'in üzerinde ise mükemmel
+• %10-15 arası ise iyi seviyede
+• %5-10 arası ise ortalama
+• %5'in altında ise dikkat gerekli
+
+💧 LİKİDİTE:
+• Cari oran 2'nin üzerinde ise güçlü likidite
+• 1.5-2 arası ise sağlıklı
+• 1-1.5 arası ise kabul edilebilir
+• 1'in altında ise risk var
+
+⚖️ BORÇLULUK:
+• Borç/Özkaynak oranı 0.5'in altında ise düşük borçluluk
+• 0.5-1 arası ise orta seviye
+• 1'in üzerinde ise yüksek borçluluk
+
+🔧 Detaylı analiz için AI servisinin yeniden çalışması bekleniyor...`;
             }
         }
 
         async function generateAIAnalysis(financialData) {
-            const grossMargin = ((financialData.netSales - financialData.costOfSales) / financialData.netSales * 100) || 0;
+            const grossProfit = (financialData.netSales - financialData.costOfSales) || 0;
+            const grossMargin = ((grossProfit / financialData.netSales) * 100) || 0;
             const netMargin = (financialData.netProfit / financialData.netSales * 100) || 0;
+            const totalAssets = (financialData.currentAssets + financialData.fixedAssets) || 0;
+            const totalDebt = (financialData.shortTermDebt + financialData.longTermDebt) || 0;
             const currentRatio = financialData.currentAssets / (financialData.shortTermDebt || 1);
-            const debtToEquity = (financialData.shortTermDebt + financialData.longTermDebt) / (financialData.equity || 1);
+            const debtToEquity = totalDebt / (financialData.equity || 1);
+            const assetTurnover = financialData.netSales / (totalAssets || 1);
+            const roe = (financialData.netProfit / financialData.equity * 100) || 0;
+            const roa = (financialData.netProfit / totalAssets * 100) || 0;
+            const ebitdaMargin = (financialData.ebitda / financialData.netSales * 100) || 0;
 
             const prompt = `
-Finansal analiz uzmanı olarak aşağıdaki verileri analiz et:
+Sen bir uzman finansal analist ve danışmansın. Aşağıdaki şirket verilerini profesyonel olarak analiz et:
 
-VERİLER:
-- Net Satışlar: ${financialData.netSales.toLocaleString('tr-TR')} TL
-- Satış Maliyeti: ${financialData.costOfSales.toLocaleString('tr-TR')} TL
-- Net Kâr: ${financialData.netProfit.toLocaleString('tr-TR')} TL
-- Brüt Kâr Marjı: %${grossMargin.toFixed(2)}
-- Net Kâr Marjı: %${netMargin.toFixed(2)}
-- Cari Oran: ${currentRatio.toFixed(2)}
-- Borç/Özkaynak: ${debtToEquity.toFixed(2)}
+📊 FİNANSAL VERİLER:
+• Net Satışlar: ${financialData.netSales.toLocaleString('tr-TR')} TL
+• Satış Maliyeti: ${financialData.costOfSales.toLocaleString('tr-TR')} TL
+• Yönetim Giderleri: ${financialData.adminExpenses.toLocaleString('tr-TR')} TL
+• FAVÖK/EBITDA: ${financialData.ebitda.toLocaleString('tr-TR')} TL
+• Net Kâr/Zarar: ${financialData.netProfit.toLocaleString('tr-TR')} TL
+• Dönen Varlıklar: ${financialData.currentAssets.toLocaleString('tr-TR')} TL
+• Duran Varlıklar: ${financialData.fixedAssets.toLocaleString('tr-TR')} TL
+• Kısa Vadeli Borçlar: ${financialData.shortTermDebt.toLocaleString('tr-TR')} TL
+• Uzun Vadeli Borçlar: ${financialData.longTermDebt.toLocaleString('tr-TR')} TL
+• Özkaynak: ${financialData.equity.toLocaleString('tr-TR')} TL
 
-Kısa ve öz analiz yap:
-1. 💰 KARLILIK DEĞERLENDİRMESİ
-2. 💧 LİKİDİTE DURUMU
-3. ⚖️ BORÇLULUK ANALİZİ
-4. 🎯 ÖNCELİKLİ ÖNERİLER
+📈 HESAPLANAN ORANLAR:
+• Brüt Kâr Marjı: %${grossMargin.toFixed(2)}
+• Net Kâr Marjı: %${netMargin.toFixed(2)}
+• FAVÖK Marjı: %${ebitdaMargin.toFixed(2)}
+• Cari Oran: ${currentRatio.toFixed(2)}
+• Borç/Özkaynak Oranı: ${debtToEquity.toFixed(2)}
+• Varlık Devir Hızı: ${assetTurnover.toFixed(2)}
+• Özkaynak Kârlılığı (ROE): %${roe.toFixed(2)}
+• Aktif Kârlılığı (ROA): %${roa.toFixed(2)}
 
-Türkçe, kısa ve net yanıt ver.
+LÜTFEN AŞAĞIDAKİ BAŞLIKLARDA DETAYLI ANALİZ YAP:
+
+💰 KARLILIK ANALİZİ:
+- Brüt, net ve FAVÖK marjlarını değerlendir
+- Sektör ortalaması ile karşılaştır
+- Maliyet yapısı hakkında yorum yap
+
+💧 LİKİDİTE DURUMU:
+- Cari oranı analiz et
+- Kısa vadeli borç ödeme gücünü değerlendir
+- Çalışma sermayesi durumunu incele
+
+⚖️ BORÇLULUK VE SERMAYE YAPISI:
+- Borç/özkaynak oranını değerlendir
+- Finansal kaldıraç etkisini analiz et
+- Borç yapısının sürdürülebilirliğini incele
+
+📊 VARLIK VERİMLİLİĞİ:
+- ROE ve ROA oranlarını analiz et
+- Varlık kullanım etkinliğini değerlendir
+- Yönetim performansını incele
+
+⚠️ RİSK DEĞERLENDİRMESİ:
+- Ana finansal riskleri belirle
+- Dikkat edilmesi gereken alanları listele
+
+🎯 STRATEJİK ÖNERİLER:
+- Kısa vadeli aksiyon önerileri (3-6 ay)
+- Uzun vadeli iyileştirme stratejileri (1-2 yıl)
+- Performans artırma fırsatları
+
+📈 GELECEK PROJEKSİYONLARI:
+- Mevcut trend analizi
+- Büyüme potansiyeli değerlendirmesi
+
+Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve örnekler kullan.
             `;
 
             return await callGeminiAI(prompt);
@@ -1064,7 +1257,7 @@ Türkçe, kısa ve net yanıt ver.
             const reportContent = document.getElementById('reportContent');
             
             if (!data || Object.values(data).every(val => val === 0)) {
-                reportContent.innerHTML = '<p class="text-gray-600 text-xs">Raporlar için önce veri girişi yapınız.</p>';
+                reportContent.innerHTML = '<div class="text-center py-8"><p class="text-gray-600 text-sm">📊 Finansal raporlar için önce veri girişi yapınız.</p><p class="text-xs text-gray-500 mt-2">Veriler girildikten sonra AI analizi otomatik olarak çalışacaktır.</p></div>';
                 return;
             }
             
@@ -1072,90 +1265,161 @@ Türkçe, kısa ve net yanıt ver.
             const grossProfit = data.netSales - data.costOfSales;
             const grossProfitMargin = (grossProfit / data.netSales * 100) || 0;
             const netProfitMargin = (data.netProfit / data.netSales * 100) || 0;
+            const ebitdaMargin = (data.ebitda / data.netSales * 100) || 0;
             const currentRatio = data.currentAssets / (data.shortTermDebt || 1);
             const debtToEquityRatio = (data.shortTermDebt + data.longTermDebt) / (data.equity || 1);
             const totalAssets = data.currentAssets + data.fixedAssets;
             const roe = (data.netProfit / data.equity * 100) || 0;
             const roa = (data.netProfit / totalAssets * 100) || 0;
+            const assetTurnover = data.netSales / (totalAssets || 1);
+            
+            // Sektörel karşılaştırma için benchmark değerler
+            const sectorBenchmarks = {
+                grossMargin: { excellent: 40, good: 30, average: 20, poor: 10 },
+                netMargin: { excellent: 15, good: 10, average: 5, poor: 0 },
+                currentRatio: { excellent: 2.5, good: 2.0, average: 1.5, poor: 1.0 },
+                debtToEquity: { excellent: 0.3, good: 0.5, average: 1.0, poor: 1.5 },
+                roe: { excellent: 20, good: 15, average: 10, poor: 5 },
+                roa: { excellent: 10, good: 7, average: 5, poor: 2 }
+            };
+            
+            function getBenchmarkStatus(value, benchmark) {
+                if (value >= benchmark.excellent) return '🟢 Mükemmel';
+                if (value >= benchmark.good) return '🟡 İyi';
+                if (value >= benchmark.average) return '🟠 Ortalama';
+                return '🔴 Düşük';
+            }
             
             // Analysis
-            let profitabilityStatus = netProfitMargin > 15 ? '🟢 Mükemmel' : netProfitMargin > 10 ? '🟡 İyi' : netProfitMargin > 5 ? '🟠 Orta' : '🔴 Düşük';
-            let liquidityStatus = currentRatio > 2 ? '🟢 Güçlü' : currentRatio > 1.5 ? '🟡 Sağlıklı' : currentRatio > 1 ? '🟠 Kabul edilebilir' : '🔴 Risk';
-            let leverageStatus = debtToEquityRatio < 0.3 ? '🟢 Düşük' : debtToEquityRatio < 0.6 ? '🟡 Orta' : debtToEquityRatio < 1 ? '🟠 Yüksek' : '🔴 Çok Yüksek';
+            let profitabilityStatus = getBenchmarkStatus(netProfitMargin, sectorBenchmarks.netMargin);
+            let liquidityStatus = getBenchmarkStatus(currentRatio, sectorBenchmarks.currentRatio);
+            let leverageStatus = debtToEquityRatio < sectorBenchmarks.debtToEquity.excellent ? '🟢 Düşük' : 
+                                debtToEquityRatio < sectorBenchmarks.debtToEquity.good ? '🟡 Orta' : 
+                                debtToEquityRatio < sectorBenchmarks.debtToEquity.average ? '🟠 Yüksek' : '🔴 Çok Yüksek';
             
             // AI Analysis
             let aiAnalysis = '';
             if (aiAnalysisEnabled) {
                 try {
                     reportContent.innerHTML = `
-                        <div class="flex items-center justify-center py-4">
-                            <div class="text-center">
-                                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                                <p class="text-xs text-gray-600">🤖 AI Analizi Hazırlanıyor...</p>
+                        <div class="flex flex-col items-center justify-center py-8">
+                            <div class="relative">
+                                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-blue-600 text-lg">🤖</span>
+                                </div>
+                            </div>
+                            <div class="text-center mt-4">
+                                <p class="text-sm font-semibold text-gray-800">Gemini AI Analizi Hazırlanıyor...</p>
+                                <p class="text-xs text-gray-600 mt-1">Finansal verileriniz profesyonel olarak analiz ediliyor</p>
+                                <div class="flex justify-center mt-2 space-x-1">
+                                    <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                                    <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style="animation-delay: 0.1s;"></div>
+                                    <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style="animation-delay: 0.2s;"></div>
+                                </div>
                             </div>
                         </div>
                     `;
                     aiAnalysis = await generateAIAnalysis(data);
                 } catch (error) {
-                    aiAnalysis = '⚠️ AI analizi şu anda kullanılamıyor.';
+                    console.error('AI Analysis Error:', error);
+                    aiAnalysis = `⚠️ AI analizi şu anda kullanılamıyor: ${error.message}`;
                 }
             }
 
             reportContent.innerHTML = `
                 <div class="space-y-3">
                     ${aiAnalysisEnabled && aiAnalysis ? `
-                        <div class="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded p-3">
-                            <div class="flex items-center justify-between mb-2">
-                                <h3 class="text-sm font-bold text-purple-800">🤖 AI Finansal Analizi</h3>
-                                <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">Gemini AI</span>
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-300 rounded-lg p-4 mb-4">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-2xl">🤖</span>
+                                    <div>
+                                        <h3 class="text-sm font-bold text-blue-900">Gemini AI Finansal Analizi</h3>
+                                        <p class="text-xs text-blue-700">Google AI ile Güçlendirilmiş Profesyonel Analiz</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold flex items-center">
+                                        <span class="w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                                        Aktif
+                                    </span>
+                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Gemini Pro</span>
+                                </div>
                             </div>
-                            <div class="bg-white rounded p-2 border">
-                                <div class="whitespace-pre-wrap text-xs text-gray-800">${aiAnalysis}</div>
+                            <div class="bg-white rounded-lg p-3 border border-blue-200 shadow-sm">
+                                <div class="prose prose-sm max-w-none">
+                                    <div class="whitespace-pre-wrap text-xs text-gray-800 leading-relaxed">${aiAnalysis}</div>
+                                </div>
+                            </div>
+                            <div class="mt-2 flex items-center justify-between text-xs text-blue-600">
+                                <span>📊 Profesyonel finansal danışmanlık analizi</span>
+                                <span>⏱️ ${new Date().toLocaleTimeString('tr-TR')}</span>
                             </div>
                         </div>
                     ` : ''}
                     
-                    <!-- Financial Metrics -->
-                    <div class="grid grid-cols-2 gap-2">
-                        <div class="bg-blue-50 p-2 rounded">
-                            <h4 class="font-semibold text-blue-800 text-xs mb-1">Kârlılık</h4>
+                    <!-- Advanced Financial Metrics -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+                        <div class="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-lg border border-blue-200">
+                            <h4 class="font-semibold text-blue-800 text-xs mb-2 flex items-center">
+                                <span class="mr-1">💰</span> Kârlılık Analizi
+                            </h4>
                             <div class="text-xs space-y-1">
                                 <div class="flex justify-between">
                                     <span>Brüt Marj:</span>
                                     <span class="font-semibold">${grossProfitMargin.toFixed(1)}%</span>
                                 </div>
                                 <div class="flex justify-between">
+                                    <span>FAVÖK Marjı:</span>
+                                    <span class="font-semibold">${ebitdaMargin.toFixed(1)}%</span>
+                                </div>
+                                <div class="flex justify-between">
                                     <span>Net Marj:</span>
                                     <span class="font-semibold">${netProfitMargin.toFixed(1)}%</span>
                                 </div>
-                                <div class="text-xs">${profitabilityStatus}</div>
+                                <div class="text-xs pt-1 border-t">${profitabilityStatus}</div>
                             </div>
                         </div>
                         
-                        <div class="bg-green-50 p-2 rounded">
-                            <h4 class="font-semibold text-green-800 text-xs mb-1">Likidite</h4>
+                        <div class="bg-gradient-to-br from-green-50 to-green-100 p-3 rounded-lg border border-green-200">
+                            <h4 class="font-semibold text-green-800 text-xs mb-2 flex items-center">
+                                <span class="mr-1">💧</span> Likidite Durumu
+                            </h4>
                             <div class="text-xs space-y-1">
                                 <div class="flex justify-between">
                                     <span>Cari Oran:</span>
                                     <span class="font-semibold">${currentRatio.toFixed(2)}</span>
                                 </div>
-                                <div class="text-xs">${liquidityStatus}</div>
+                                <div class="flex justify-between">
+                                    <span>Çalışma Sermayesi:</span>
+                                    <span class="font-semibold">${((data.currentAssets - data.shortTermDebt) / 1000).toFixed(0)}K TL</span>
+                                </div>
+                                <div class="text-xs pt-1 border-t">${liquidityStatus}</div>
                             </div>
                         </div>
                         
-                        <div class="bg-purple-50 p-2 rounded">
-                            <h4 class="font-semibold text-purple-800 text-xs mb-1">Borçluluk</h4>
+                        <div class="bg-gradient-to-br from-purple-50 to-purple-100 p-3 rounded-lg border border-purple-200">
+                            <h4 class="font-semibold text-purple-800 text-xs mb-2 flex items-center">
+                                <span class="mr-1">⚖️</span> Borçluluk
+                            </h4>
                             <div class="text-xs space-y-1">
                                 <div class="flex justify-between">
                                     <span>Borç/Özkaynak:</span>
                                     <span class="font-semibold">${debtToEquityRatio.toFixed(2)}</span>
                                 </div>
-                                <div class="text-xs">${leverageStatus}</div>
+                                <div class="flex justify-between">
+                                    <span>Toplam Borç:</span>
+                                    <span class="font-semibold">${((data.shortTermDebt + data.longTermDebt) / 1000).toFixed(0)}K TL</span>
+                                </div>
+                                <div class="text-xs pt-1 border-t">${leverageStatus}</div>
                             </div>
                         </div>
                         
-                        <div class="bg-orange-50 p-2 rounded">
-                            <h4 class="font-semibold text-orange-800 text-xs mb-1">Verimlilik</h4>
+                        <div class="bg-gradient-to-br from-orange-50 to-orange-100 p-3 rounded-lg border border-orange-200">
+                            <h4 class="font-semibold text-orange-800 text-xs mb-2 flex items-center">
+                                <span class="mr-1">📊</span> Verimlilik
+                            </h4>
                             <div class="text-xs space-y-1">
                                 <div class="flex justify-between">
                                     <span>ROE:</span>
@@ -1164,6 +1428,55 @@ Türkçe, kısa ve net yanıt ver.
                                 <div class="flex justify-between">
                                     <span>ROA:</span>
                                     <span class="font-semibold">${roa.toFixed(1)}%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Varlık Devir:</span>
+                                    <span class="font-semibold">${assetTurnover.toFixed(2)}x</span>
+                                </div>
+                                <div class="text-xs pt-1 border-t">${getBenchmarkStatus(roe, sectorBenchmarks.roe)}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-indigo-50 to-indigo-100 p-3 rounded-lg border border-indigo-200">
+                            <h4 class="font-semibold text-indigo-800 text-xs mb-2 flex items-center">
+                                <span class="mr-1">🏦</span> Bilanço Yapısı
+                            </h4>
+                            <div class="text-xs space-y-1">
+                                <div class="flex justify-between">
+                                    <span>Toplam Varlık:</span>
+                                    <span class="font-semibold">${(totalAssets / 1000).toFixed(0)}K TL</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Özkaynak Oranı:</span>
+                                    <span class="font-semibold">${((data.equity / totalAssets) * 100).toFixed(1)}%</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Duran/Toplam:</span>
+                                    <span class="font-semibold">${((data.fixedAssets / totalAssets) * 100).toFixed(1)}%</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gradient-to-br from-pink-50 to-pink-100 p-3 rounded-lg border border-pink-200">
+                            <h4 class="font-semibold text-pink-800 text-xs mb-2 flex items-center">
+                                <span class="mr-1">📈</span> Performans Özeti
+                            </h4>
+                            <div class="text-xs space-y-1">
+                                <div class="flex justify-between">
+                                    <span>Kârlılık:</span>
+                                    <span class="font-semibold">${profitabilityStatus.split(' ')[1]}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Likidite:</span>
+                                    <span class="font-semibold">${liquidityStatus.split(' ')[1]}</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Borçluluk:</span>
+                                    <span class="font-semibold">${leverageStatus.split(' ')[1]}</span>
+                                </div>
+                                <div class="text-xs pt-1 border-t">
+                                    ${netProfitMargin > 10 && currentRatio > 1.5 && debtToEquityRatio < 1 ? '🟢 Güçlü Performans' : 
+                                      netProfitMargin > 5 && currentRatio > 1 ? '🟡 Kabul Edilebilir' : '🔴 İyileştirme Gerekli'}
                                 </div>
                             </div>
                         </div>
@@ -1479,6 +1792,9 @@ Türkçe, kısa ve net yanıt ver.
 
         // Initialize
         document.addEventListener('DOMContentLoaded', function() {
+            // Test Firebase connection
+            testFirebaseConnection();
+            
             initializeAIToggle();
             
             // Demo scenario buttons
@@ -1486,6 +1802,18 @@ Türkçe, kısa ve net yanıt ver.
             document.getElementById('loadScenario2').addEventListener('click', () => loadDemoScenario(2));
             document.getElementById('loadScenario3').addEventListener('click', () => loadDemoScenario(3));
             document.getElementById('loadScenario4').addEventListener('click', () => loadDemoScenario(4));
+            
+            // Şirket giriş alanlarına tıklandığında uyarı
+            const companyInputs = ['loginCompanyName', 'loginPassword', 'registerCompanyName', 'registerEmail', 'registerPassword', 'registerPasswordConfirm'];
+            companyInputs.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    input.addEventListener('focus', function() {
+                        alert('⚠️ UYARI!\n\nLütfen önce Google ile giriş yapınız!\n\n🔑 Bu alanları kullanmak için Google hesabıyla giriş yapmanız gerekir.');
+                        this.blur(); // Input'tan çık
+                    });
+                }
+            });
         });
 
         // Make functions global for onclick handlers

@@ -56,8 +56,8 @@
             </div>
         </div>
     </div>
-    <!-- Login Screen -->
-    <div id="loginScreen" class="min-h-screen gradient-bg flex items-center justify-center p-2">
+    <!-- Login Screen - HIDDEN -->
+    <div id="loginScreen" class="min-h-screen gradient-bg flex items-center justify-center p-2" style="display: none;">
         <div class="bg-white rounded-lg shadow-lg p-4 w-full max-w-sm">
             <div class="text-center mb-4">
                 <h1 class="text-lg font-bold text-gray-800">💰 Finansal Analiz</h1>
@@ -104,8 +104,8 @@
                 <div class="text-center text-xs text-gray-500">veya</div>
                 
                 <form id="companyLoginForm" class="space-y-2">
-                    <input type="text" id="loginCompanyName" placeholder="Şirket Adı" required class="w-full compact-input border rounded">
-                    <input type="password" id="loginPassword" placeholder="Şifre" required class="w-full compact-input border rounded">
+                    <input type="text" id="loginCompanyName" placeholder="Şirket Adı" required class="w-full compact-input border rounded" onclick="if(!currentUser) { alert('⚠️ UYARI!\\n\\nÖnce Google ile giriş yapınız!\\n\\n🔑 Bu alanları kullanmak için Google hesabıyla giriş yapmanız gerekir.'); this.blur(); return false; }">
+                    <input type="password" id="loginPassword" placeholder="Şifre" required class="w-full compact-input border rounded" onclick="if(!currentUser) { alert('⚠️ UYARI!\\n\\nÖnce Google ile giriş yapınız!\\n\\n🔑 Bu alanları kullanmak için Google hesabıyla giriş yapmanız gerekir.'); this.blur(); return false; }">
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-xs">Şirket Girişi</button>
                 </form>
             </div>
@@ -113,10 +113,10 @@
             <!-- Register Form -->
             <div id="registerForm" class="space-y-2 hidden">
                 <form id="companyRegisterForm" class="space-y-2">
-                    <input type="text" id="registerCompanyName" placeholder="Şirket Adı *" required class="w-full compact-input border rounded">
-                    <input type="email" id="registerEmail" placeholder="E-posta Adresi *" required class="w-full compact-input border rounded">
-                    <input type="password" id="registerPassword" placeholder="Şifre (min 6 karakter) *" required minlength="6" class="w-full compact-input border rounded">
-                    <input type="password" id="registerPasswordConfirm" placeholder="Şifre Tekrar *" required class="w-full compact-input border rounded">
+                    <input type="text" id="registerCompanyName" placeholder="Şirket Adı *" required class="w-full compact-input border rounded" onclick="if(!currentUser) { alert('⚠️ UYARI!\\n\\nÖnce Google ile giriş yapınız!\\n\\n🔑 Bu alanları kullanmak için Google hesabıyla giriş yapmanız gerekir.'); this.blur(); return false; }">
+                    <input type="email" id="registerEmail" placeholder="E-posta Adresi *" required class="w-full compact-input border rounded" onclick="if(!currentUser) { alert('⚠️ UYARI!\\n\\nÖnce Google ile giriş yapınız!\\n\\n🔑 Bu alanları kullanmak için Google hesabıyla giriş yapmanız gerekir.'); this.blur(); return false; }">
+                    <input type="password" id="registerPassword" placeholder="Şifre (min 6 karakter) *" required minlength="6" class="w-full compact-input border rounded" onclick="if(!currentUser) { alert('⚠️ UYARI!\\n\\nÖnce Google ile giriş yapınız!\\n\\n🔑 Bu alanları kullanmak için Google hesabıyla giriş yapmanız gerekir.'); this.blur(); return false; }">
+                    <input type="password" id="registerPasswordConfirm" placeholder="Şifre Tekrar *" required class="w-full compact-input border rounded" onclick="if(!currentUser) { alert('⚠️ UYARI!\\n\\nÖnce Google ile giriş yapınız!\\n\\n🔑 Bu alanları kullanmak için Google hesabıyla giriş yapmanız gerekir.'); this.blur(); return false; }">
                     
                     <select id="registerSector" required class="w-full compact-input border rounded">
                         <option value="">Sektör Seçin *</option>
@@ -177,7 +177,7 @@
     </div>
 
     <!-- Main Dashboard -->
-    <div id="dashboard" class="hidden min-h-screen bg-gray-50">
+    <div id="dashboard" class="min-h-screen bg-gray-50">
         <!-- Compact Header -->
         <header class="bg-white shadow-sm border-b p-2">
             <div class="flex items-center justify-between">
@@ -368,20 +368,9 @@
             return parseFloat(input.value.replace(/[^0-9-]/g, '')) || 0;
         }
 
-        // Firebase Configuration - CORRECTED WITH PROPER API KEY
+        // Firebase Configuration - BASIT
         const firebaseConfig = {
-            apiKey: "AIzaSyCXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", // TODO: Firebase Console'dan Web API Key alınmalı
-            authDomain: "analizprox-62e8d.firebaseapp.com",
-            projectId: "analizprox-62e8d", 
-            databaseURL: "https://analizprox-62e8d-default-rtdb.europe-west1.firebasedatabase.app/",
-            storageBucket: "analizprox-62e8d.appspot.com",
-            messagingSenderId: "731776781989", // Hata mesajından doğru proje numarası
-            appId: "1:731776781989:web:c8f4e9d5a1b2c3d4e5f6g7" // Doğru proje numarası ile
-        };
-        
-        // TEMPORARY WORKAROUND - TEST WITH MOCK CREDENTIALS
-        const TEMP_FIREBASE_CONFIG = {
-            apiKey: "AIzaSyBmock-key-for-testing-purposes-only-123456", 
+            apiKey: "AIzaSyAF8ZcI4lYPjnojma094lo_orSfX8I9Fh8", // Gemini AI key - sadece AI için
             authDomain: "analizprox-62e8d.firebaseapp.com",
             projectId: "analizprox-62e8d", 
             databaseURL: "https://analizprox-62e8d-default-rtdb.europe-west1.firebasedatabase.app/",
@@ -390,56 +379,63 @@
             appId: "1:731776781989:web:c8f4e9d5a1b2c3d4e5f6g7"
         };
         
-        // OFFLINE MODE SWITCH - TEMPORARY BYPASS FOR FIREBASE ISSUES
-        const FORCE_OFFLINE_MODE = localStorage.getItem('forceOfflineMode') === 'true' || false; // localStorage kontrolü
-        let firebaseConnected = false;
+        // Firebase'i başlat
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const rtdb = firebase.database();
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
         
-        // Firebase'i başlat - TEMP CONFIG ILE TEST
-        if (!FORCE_OFFLINE_MODE) {
-            try {
-                // Geçici olarak TEMP_FIREBASE_CONFIG kullan
-                firebase.initializeApp(TEMP_FIREBASE_CONFIG);
-                const auth = firebase.auth();
-                const db = firebase.firestore();
-                const rtdb = firebase.database();
-                const googleProvider = new firebase.auth.GoogleAuthProvider();
-                
-                // Google provider ayarları - ENHANCED
-                googleProvider.addScope('email');
-                googleProvider.addScope('profile');
-                googleProvider.setCustomParameters({
-                    'prompt': 'select_account',
-                    'hd': '' // Tüm domainlere izin ver
-                });
-                
-                console.log('🔥 Firebase başlatıldı:', firebaseConfig.projectId);
-            } catch (initError) {
-                console.error('🔴 Firebase başlatma hatası:', initError);
-                console.warn('💾 Offline mode etkinleştirildi');
-                
-                // Firebase hatası için alert göster
-                setTimeout(() => {
-                    if (initError.code && initError.code.includes('identity-toolkit')) {
-                        showFirebaseAlert('Identity Toolkit API etkinleştirilmemiş!');
-                    } else if (initError.message.includes('API')) {
-                        showFirebaseAlert('Firebase API hatası: ' + initError.message);
-                    } else {
-                        showFirebaseAlert('Firebase bağlantı sorunu');
-                    }
-                }, 1000);
-            }
-        } else {
-            console.log('🔄 Manuel offline mode aktiv - Firebase atlanıyor');
-        }
+        // Google provider ayarları
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
 
-        // Global Variables
-        let currentUser = null;
+        // Global Variables - AUTO LOGIN
+        let currentUser = 'auto_user_' + Date.now(); // Otomatik kullanıcı
         let isSuperAdmin = false;
         let financialData = {};
         let charts = {};
-        let userProfile = null;
+        let userProfile = { companyName: 'Test Şirketi', email: 'test@akca.com' };
         let aiAnalysisEnabled = true;
         let previousData = null;
+
+        // INPUT KONTROL SİSTEMİ - ANINDA AKTİF
+        function setupInputControls() {
+            console.log('🔄 Input kontrolleri kuruluyor...');
+            
+            const inputIds = ['loginCompanyName', 'loginPassword', 'registerCompanyName', 'registerEmail', 'registerPassword', 'registerPasswordConfirm'];
+            
+            inputIds.forEach(inputId => {
+                const input = document.getElementById(inputId);
+                if (input) {
+                    console.log('✅ Input hazırlandı:', inputId);
+                    
+                    // Hem focus hem click eventlerini dinle
+                    ['focus', 'click', 'mousedown'].forEach(eventType => {
+                        input.addEventListener(eventType, function(e) {
+                            console.log(`Input ${eventType}:`, inputId, 'currentUser:', currentUser);
+                            
+                            if (!currentUser) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                alert('⚠️ UYARI!\n\nÖnce Google ile giriş yapınız!\n\n🔑 Bu alanları kullanmak için Google hesabıyla giriş yapmanız gerekir.');
+                                this.blur();
+                                return false;
+                            }
+                        });
+                    });
+                } else {
+                    console.warn('❌ Input bulunamadı:', inputId);
+                }
+            });
+        }
+        
+        // Sayfa yüklendiğinde kontrolleri kur
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupInputControls);
+        } else {
+            setupInputControls(); // Sayfa zaten yüklüyse direkt çalıştır
+        }
 
         // Firebase Connection Test - ENHANCED
         async function testFirebaseConnection() {
@@ -513,6 +509,13 @@
         const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
         
         console.log('🤖 Akça Pro X AI hazır');
+        console.log('🔐 CurrentUser başlangıç durumu:', currentUser);
+        console.log('⚠️ Input kontrol sistemi aktif - Google girişi yapılmadan input alanlarına erişim engellendi');
+        
+        // Otomatik şirket adını ayarla
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('currentCompany').textContent = 'Akça Pro X AI';
+        });
 
         // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
@@ -589,7 +592,7 @@
             document.getElementById('loginTab').classList.remove('bg-blue-600', 'text-white');
         });
 
-        // Google Sign In - FIREBASE SORUNLARI İÇİN MANUEL SİMÜLASYON
+        // Google Sign In - BASIT
         googleSignInBtn.addEventListener('click', async () => {
             const termsAccepted = document.getElementById('termsAccepted');
             if (!termsAccepted.checked) {
@@ -602,64 +605,32 @@
                 googleSignInBtn.disabled = true;
                 googleSignInBtn.innerHTML = '<span>🔄 Google\'a bağlanıyor...</span>';
                 
-                // Firebase varsa Firebase Auth kullan
-                if (typeof auth !== 'undefined' && auth && firebaseConnected) {
-                    const result = await auth.signInWithPopup(googleProvider);
-                    const user = result.user;
-                    
-                    console.log('✅ Firebase Google giriş başarılı:', user.email);
-                    
-                    // Firebase'de kullanıcı profili kontrol et
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    
-                    if (!userDoc.exists) {
-                        showAccountSetup();
-                    } else {
-                        userProfile = userDoc.data();
-                        document.getElementById('currentCompany').textContent = userProfile.companyName;
-                        showDashboard();
-                        await loadUserData();
-                    }
-                } else {
-                    // Firebase çalışmıyorsa manuel login simülasyonu
-                    console.log('🔄 Firebase çalışmıyor, manuel Google login simülasyonu...');
-                    
-                    // Kullanıcıdan email al
-                    const userEmail = prompt('🔑 Google Email Adresinizi Girin:\n\n(Firebase sorunu nedeniyle geçici manuel giriş)', 'ornek@gmail.com');
-                    
-                    if (userEmail && userEmail.includes('@')) {
-                        // Manuel kullanıcı oluştur
-                        const mockUser = {
-                            uid: 'manual_' + Date.now(),
-                            email: userEmail,
-                            displayName: userEmail.split('@')[0],
-                            emailVerified: true
-                        };
-                        
-                        currentUser = mockUser.uid;
-                        
-                        console.log('✅ Manuel Google login:', mockUser.email);
-                        
-                        // LocalStorage'a kaydet
-                        const userData = {
-                            companyName: 'Test Şirketi (' + mockUser.displayName + ')',
-                            email: mockUser.email,
-                            createdAt: new Date().toISOString(),
-                            isManualLogin: true
-                        };
-                        
-                        localStorage.setItem('userProfile_' + mockUser.uid, JSON.stringify(userData));
-                        userProfile = userData;
-                        
-                        // UI güncelle
-                        document.getElementById('currentCompany').textContent = userData.companyName;
-                        showDashboard();
-                        
-                        alert('✅ Başarılı!\n\nManuel giriş tamamlandı.\nFirebase aktif olduğunda otomatik geçiş yapılacak.');
-                    } else {
-                        throw new Error('Geçersiz email adresi');
-                    }
-                }
+                const result = await auth.signInWithPopup(googleProvider);
+                const user = result.user;
+                
+                console.log('✅ Google giriş başarılı:', user.email);
+                currentUser = user.uid;
+                
+                // Kullanıcı bilgilerini kaydet
+                await db.collection('users').doc(user.uid).set({
+                    name: user.displayName,
+                    email: user.email,
+                    lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+                
+                // Dashboard'a geç
+                document.getElementById('currentCompany').textContent = user.displayName;
+                showDashboard();
+                
+            } catch (error) {
+                console.error('❌ Google giriş hatası:', error);
+                alert('❌ Google giriş hatası: ' + error.message);
+                
+            } finally {
+                googleSignInBtn.disabled = false;
+                googleSignInBtn.innerHTML = '<span>🔑 Google ile Giriş</span>';
+            }
+        });
                 
             } catch (error) {
                 console.error('❌ Google giriş hatası:', error.code, error.message);
@@ -2043,18 +2014,6 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
             document.getElementById('loadScenario2').addEventListener('click', () => loadDemoScenario(2));
             document.getElementById('loadScenario3').addEventListener('click', () => loadDemoScenario(3));
             document.getElementById('loadScenario4').addEventListener('click', () => loadDemoScenario(4));
-            
-            // Şirket giriş alanlarına tıklandığında uyarı
-            const companyInputs = ['loginCompanyName', 'loginPassword', 'registerCompanyName', 'registerEmail', 'registerPassword', 'registerPasswordConfirm'];
-            companyInputs.forEach(inputId => {
-                const input = document.getElementById(inputId);
-                if (input) {
-                    input.addEventListener('focus', function() {
-                        alert('⚠️ UYARI!\n\nLütfen önce Google ile giriş yapınız!\n\n🔑 Bu alanları kullanmak için Google hesabıyla giriş yapmanız gerekir.');
-                        this.blur(); // Input'tan çık
-                    });
-                }
-            });
         });
 
         // Make functions global for onclick handlers

@@ -46,7 +46,8 @@
         <div class="bg-white rounded-lg shadow-lg p-4 w-full max-w-sm">
             <div class="text-center mb-4">
                 <h1 class="text-lg font-bold text-gray-800">💰 Finansal Analiz</h1>
-                <p class="text-xs text-gray-600">Güvenli Giriş</p>
+                <p class="text-xs text-gray-600">Anlık yapay zeka destekli finansal analiz yorumlaması</p>
+                <p class="text-xs text-gray-600 mt-1">Güvenli Giriş</p>
             </div>
             
             <!-- Important Info -->
@@ -165,7 +166,10 @@
         <!-- Compact Header -->
         <header class="bg-white shadow-sm border-b p-2">
             <div class="flex items-center justify-between">
-                <h1 class="text-sm font-bold text-gray-800">💰 Finansal Analiz</h1>
+                <div>
+                    <h1 class="text-sm font-bold text-gray-800">💰 Finansal Analiz</h1>
+                    <p class="text-xs text-gray-600 mt-0.5">Anlık yapay zeka destekli finansal analiz yorumlaması</p>
+                </div>
                 <div class="flex items-center space-x-2">
                     <span id="currentCompany" class="text-xs text-gray-600 hidden sm:block"></span>
                     <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">Çıkış</button>
@@ -206,11 +210,11 @@
                         <div class="space-y-2">
                             <h3 class="text-xs font-semibold text-gray-700 border-b pb-1">Gelir Tablosu</h3>
                             <div class="space-y-1">
-                                <input type="number" id="netSales" placeholder="Net Satışlar (TL)" class="w-full compact-input border rounded">
-                                <input type="number" id="costOfSales" placeholder="Satış Maliyeti (TL)" class="w-full compact-input border rounded">
-                                <input type="number" id="adminExpenses" placeholder="Yönetim Giderleri (TL)" class="w-full compact-input border rounded">
-                                <input type="number" id="ebitda" placeholder="FAVÖK/EBITDA (TL)" class="w-full compact-input border rounded">
-                                <input type="number" id="netProfit" placeholder="Net Kâr/Zarar (TL)" class="w-full compact-input border rounded">
+                                <input type="text" id="netSales" placeholder="Net Satışlar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
+                                <input type="text" id="costOfSales" placeholder="Satış Maliyeti (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
+                                <input type="text" id="adminExpenses" placeholder="Yönetim Giderleri (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
+                                <input type="text" id="ebitda" placeholder="FAVÖK/EBITDA (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
+                                <input type="text" id="netProfit" placeholder="Net Kâr/Zarar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
                             </div>
                         </div>
 
@@ -218,11 +222,11 @@
                         <div class="space-y-2">
                             <h3 class="text-xs font-semibold text-gray-700 border-b pb-1">Bilanço</h3>
                             <div class="space-y-1">
-                                <input type="number" id="currentAssets" placeholder="Dönen Varlıklar (TL)" class="w-full compact-input border rounded">
-                                <input type="number" id="fixedAssets" placeholder="Duran Varlıklar (TL)" class="w-full compact-input border rounded">
-                                <input type="number" id="shortTermDebt" placeholder="Kısa Vadeli Borçlar (TL)" class="w-full compact-input border rounded">
-                                <input type="number" id="longTermDebt" placeholder="Uzun Vadeli Borçlar (TL)" class="w-full compact-input border rounded">
-                                <input type="number" id="equity" placeholder="Özkaynaklar (TL)" class="w-full compact-input border rounded">
+                                <input type="text" id="currentAssets" placeholder="Dönen Varlıklar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
+                                <input type="text" id="fixedAssets" placeholder="Duran Varlıklar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
+                                <input type="text" id="shortTermDebt" placeholder="Kısa Vadeli Borçlar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
+                                <input type="text" id="longTermDebt" placeholder="Uzun Vadeli Borçlar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
+                                <input type="text" id="equity" placeholder="Özkaynaklar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
                             </div>
                         </div>
                     </div>
@@ -240,8 +244,8 @@
                     </button>
                 </div>
 
-                <!-- Quick Charts -->
-                <div class="grid grid-cols-2 gap-2">
+                <!-- Quick Charts - HIDDEN -->
+                <div class="grid grid-cols-2 gap-2 hidden">
                     <div class="bg-white rounded shadow p-2">
                         <h4 class="text-xs font-semibold mb-1">Gelir Trendi</h4>
                         <div class="chart-container">
@@ -305,22 +309,77 @@
     </div>
 
     <script>
-        // Firebase Configuration
+        // Number formatting function
+        function formatNumber(input) {
+            // Mevcut cursor pozisyonunu al
+            const cursorPosition = input.selectionStart;
+            let value = input.value;
+            
+            // Sadece sayıları ve eksi işaretini koru
+            let numericValue = value.replace(/[^0-9-]/g, '');
+            
+            // Boş ise çık
+            if (!numericValue) {
+                input.value = '';
+                return;
+            }
+            
+            // Eksi işareti kontrolü
+            let isNegative = false;
+            if (numericValue.startsWith('-')) {
+                isNegative = true;
+                numericValue = numericValue.substring(1);
+            }
+            
+            // Sayıyı formatla (binlik ayraç)
+            if (numericValue) {
+                const formattedValue = parseInt(numericValue).toLocaleString('tr-TR');
+                input.value = isNegative ? '-' + formattedValue : formattedValue;
+            }
+            
+            // Cursor pozisyonunu güncelle
+            const newLength = input.value.length;
+            const lengthDiff = newLength - value.length;
+            const newCursorPosition = Math.max(0, cursorPosition + lengthDiff);
+            
+            setTimeout(() => {
+                input.setSelectionRange(newCursorPosition, newCursorPosition);
+            }, 0);
+        }
+
+        // Get numeric value from formatted input
+        function getNumericValue(input) {
+            if (!input.value) return 0;
+            return parseFloat(input.value.replace(/[^0-9-]/g, '')) || 0;
+        }
+
+        // Firebase Configuration - UPDATED
         const firebaseConfig = {
             apiKey: "AIzaSyAF8ZcI4lYPjnojma094lo_orSfX8I9Fh8",
             authDomain: "analizprox-62e8d.firebaseapp.com",
             projectId: "analizprox-62e8d",
             databaseURL: "https://analizprox-62e8d-default-rtdb.europe-west1.firebasedatabase.app/",
             storageBucket: "analizprox-62e8d.appspot.com",
-            messagingSenderId: "123456789012",
-            appId: "1:123456789012:web:abcdef123456"
+            messagingSenderId: "564589247382",
+            appId: "1:564589247382:web:c8f4e9d5a1b2c3d4e5f6g7"
         };
         
+        // Firebase'i başlat
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const rtdb = firebase.database(); // Realtime Database
+        const rtdb = firebase.database();
         const googleProvider = new firebase.auth.GoogleAuthProvider();
+        
+        // Google provider ayarları - ENHANCED
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        googleProvider.setCustomParameters({
+            'prompt': 'select_account',
+            'hd': '' // Tüm domainlere izin ver
+        });
+        
+        console.log('🔥 Firebase başlatıldı:', firebaseConfig.projectId);
 
         // Global Variables
         let currentUser = null;
@@ -332,63 +391,78 @@
         let previousData = null;
         let firebaseConnected = false;
 
-        // Firebase Connection Test
+        // Firebase Connection Test - ENHANCED
         async function testFirebaseConnection() {
             try {
                 console.log('🔄 Firebase bağlantısı test ediliyor...');
                 
                 // Test Firestore
-                await db.collection('_test').doc('connection').set({
+                const testDoc = db.collection('_test').doc('connection');
+                await testDoc.set({
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                     test: true,
                     userAgent: navigator.userAgent,
-                    url: window.location.href
+                    url: window.location.href,
+                    version: '2.0'
                 });
                 
                 // Test Realtime Database
-                await rtdb.ref('_test/connection').set({
+                const testRef = rtdb.ref('_test/connection');
+                await testRef.set({
                     timestamp: firebase.database.ServerValue.TIMESTAMP,
                     test: true,
                     userAgent: navigator.userAgent,
-                    url: window.location.href
+                    url: window.location.href,
+                    version: '2.0'
                 });
                 
                 firebaseConnected = true;
-                console.log('✅ Firebase bağlantısı başarılı (Firestore + Realtime DB)');
+                console.log('✅ Firebase FULL bağlantı başarılı (Auth + Firestore + Realtime DB)');
                 
-                // Test verilerini temizle
+                // Test Authentication
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        console.log('🔐 Auth durumu: Giriş yapılmış -', user.email);
+                    } else {
+                        console.log('🔐 Auth durumu: Çıkış yapılmış');
+                    }
+                });
+                
+                // Clean up test data
                 setTimeout(async () => {
                     try {
-                        await db.collection('_test').doc('connection').delete();
-                        await rtdb.ref('_test').remove();
+                        await testDoc.delete();
+                        await testRef.remove();
                         console.log('🧹 Firebase test verileri temizlendi');
                     } catch (e) { 
-                        console.log('Test verisi temizleme hatası (normal):', e.message); 
+                        console.log('Test cleanup hatası (normal):', e.message); 
                     }
                 }, 5000);
                 
-                // Başarılı bağlantıyı kullanıcıya bildir
+                // Success notification
                 setTimeout(() => {
                     if (firebaseConnected) {
-                        console.log('🔗 Firebase aktif - Veriler cloud\'da saklanacak');
+                        console.log('🌐 Firebase tamamen aktif - Tüm servisler çalışıyor');
                     }
                 }, 1000);
                 
             } catch (error) {
                 firebaseConnected = false;
-                console.warn('🔴 Firebase bağlantısı yok, localStorage kullanılacak');
-                console.warn('Detay:', error.message);
+                console.error('🔴 Firebase bağlantı hatası:', error);
+                console.warn('💾 Offline mod aktif - localStorage kullanılacak');
                 
-                // Offline mod bildirimi
+                // Offline notification
                 setTimeout(() => {
-                    console.log('💾 Offline mod aktif - Veriler yerel olarak saklanacak');
+                    console.log('� Uygulama offline modda çalışıyor');
                 }, 1000);
             }
         }
 
-        // Gemini AI Configuration
+        // Gemini AI Configuration - UPDATED
         const GEMINI_API_KEY = 'AIzaSyAF8ZcI4lYPjnojma094lo_orSfX8I9Fh8';
         const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+        
+        console.log('🤖 Akça Pro X AI hazır');
 
         // DOM Elements
         const loginScreen = document.getElementById('loginScreen');
@@ -401,26 +475,43 @@
         // Firebase Auth State Observer
         auth.onAuthStateChanged(async (user) => {
             if (user) {
+                console.log('🔐 Kullanıcı oturum açtı:', user.email);
                 currentUser = user.uid;
+                
                 try {
                     const userDoc = await db.collection('users').doc(user.uid).get();
                     if (userDoc.exists) {
                         userProfile = userDoc.data();
-                        document.getElementById('currentCompany').textContent = userProfile.companyName;
-                        if (user.email === 'admin@finansalanaliz.com') {
+                        document.getElementById('currentCompany').textContent = userProfile.companyName || 'Bilinmeyen Şirket';
+                        
+                        // Süper admin kontrolü
+                        if (user.email === 'admin@finansalanaliz.com' || userProfile.companyName === 'Süper Admin') {
                             isSuperAdmin = true;
                             document.getElementById('superAdminTab').classList.remove('hidden');
                         }
+                        
                         showDashboard();
                         await loadUserData();
+                        
+                        // Son giriş zamanını güncelle
+                        await db.collection('users').doc(user.uid).update({
+                            lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                            email: user.email,
+                            displayName: user.displayName,
+                            photoURL: user.photoURL
+                        });
+                        
                     } else {
+                        // Yeni kullanıcı
+                        console.log('🆕 Yeni kullanıcı, hesap kurulumu gerekli');
                         showAccountSetup();
                     }
                 } catch (error) {
-                    console.error('User profile error:', error);
-                    alert('Kullanıcı bilgileri yüklenirken hata oluştu.');
+                    console.error('Kullanıcı profil hatası:', error);
+                    alert('❌ Kullanıcı bilgileri yüklenirken hata oluştu: ' + error.message);
                 }
             } else {
+                console.log('👋 Kullanıcı oturumu kapattı');
                 currentUser = null;
                 userProfile = null;
                 isSuperAdmin = false;
@@ -448,7 +539,7 @@
             document.getElementById('loginTab').classList.remove('bg-blue-600', 'text-white');
         });
 
-        // Google Sign In - UYARI İLE
+        // Google Sign In - GERÇEK GOOGLE OAUTH
         googleSignInBtn.addEventListener('click', async () => {
             const termsAccepted = document.getElementById('termsAccepted');
             if (!termsAccepted.checked) {
@@ -457,41 +548,47 @@
                 return;
             }
             
-            // Google ile giriş işlemi devam ediyor
-            
-            // Demo Google Login
-            const demoEmail = 'demo@gmail.com';
-            const demoCompany = 'Demo Şirketi (Google)';
-            
             try {
                 googleSignInBtn.disabled = true;
-                googleSignInBtn.textContent = 'Google bağlanıyor...';
+                googleSignInBtn.innerHTML = '<span>🔄 Google\'a bağlanıyor...</span>';
                 
-                // Simulate Google login
-                setTimeout(async () => {
-                    currentUser = 'google_demo_user';
-                    userProfile = {
-                        companyName: demoCompany,
-                        email: demoEmail,
-                        sector: 'teknoloji',
-                        employeeCount: '11-50',
-                        createdAt: new Date(),
-                        lastLogin: new Date(),
-                        isActive: true,
-                        loginMethod: 'google'
-                    };
-                    
-                    document.getElementById('currentCompany').textContent = demoCompany;
+                // Gerçek Google sign in
+                const result = await auth.signInWithPopup(googleProvider);
+                const user = result.user;
+                
+                console.log('✅ Google giriş başarılı:', user.email);
+                
+                // Firebase'de kullanıcı profili kontrol et
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                
+                if (!userDoc.exists) {
+                    // Yeni kullanıcı - hesap kurulumu gerekli
+                    showAccountSetup();
+                } else {
+                    // Mevcut kullanıcı - direkt dashboard
+                    userProfile = userDoc.data();
+                    document.getElementById('currentCompany').textContent = userProfile.companyName;
                     showDashboard();
-                    alert(`✅ Google ile giriş başarılı!\n📧 ${demoEmail}\n🏢 ${demoCompany}`);
-                    
-                    googleSignInBtn.disabled = false;
-                    googleSignInBtn.innerHTML = '<span>🔑 Google ile Giriş</span>';
-                }, 1500);
+                    await loadUserData();
+                }
                 
             } catch (error) {
-                console.error('Google sign in error:', error);
-                alert('❌ Google ile giriş hatası: ' + error.message);
+                console.error('Google giriş hatası:', error);
+                let errorMessage = 'Google giriş hatası: ';
+                
+                if (error.code === 'auth/popup-closed-by-user') {
+                    errorMessage = 'Giriş iptal edildi. Lütfen tekrar deneyin.';
+                } else if (error.code === 'auth/network-request-failed') {
+                    errorMessage = 'İnternet bağlantısı hatası. Bağlantınızı kontrol edin.';
+                } else if (error.code === 'auth/popup-blocked') {
+                    errorMessage = 'Pop-up engellendi. Tarayıcınızda pop-up\'ları etkinleştirin.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                alert('❌ ' + errorMessage);
+                
+            } finally {
                 googleSignInBtn.disabled = false;
                 googleSignInBtn.innerHTML = '<span>🔑 Google ile Giriş</span>';
             }
@@ -745,19 +842,43 @@
             
             try {
                 const user = auth.currentUser;
-                const userProfile = {
-                    companyName, email: user.email, sector, employeeCount,
+                if (!user) {
+                    alert('❌ Oturum hatası, lütfen tekrar giriş yapın.');
+                    return;
+                }
+                
+                const userProfileData = {
+                    companyName, 
+                    email: user.email, 
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    sector, 
+                    employeeCount,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                     lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                    isActive: true
+                    isActive: true,
+                    loginMethod: 'google'
                 };
                 
-                await db.collection('users').doc(user.uid).set(userProfile);
+                // Firestore'a kaydet
+                await db.collection('users').doc(user.uid).set(userProfileData);
+                
+                // Realtime Database'e de kaydet
+                if (firebaseConnected) {
+                    await rtdb.ref(`users/${user.uid}`).set({
+                        ...userProfileData,
+                        createdAt: firebase.database.ServerValue.TIMESTAMP,
+                        lastLogin: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+                
                 currentUser = user.uid;
-                window.userProfile = userProfile;
+                userProfile = userProfileData;
                 document.getElementById('currentCompany').textContent = companyName;
+                
                 showDashboard();
-                alert(`🎉 ${companyName} hesabınız oluşturuldu!`);
+                alert(`🎉 Hoş geldiniz!\n\n🏢 ${companyName}\n📧 ${user.email}\n\nHesabınız başarıyla oluşturuldu!`);
+                
             } catch (error) {
                 console.error('Account setup error:', error);
                 alert('❌ Hesap oluşturma hatası: ' + error.message);
@@ -768,10 +889,14 @@
 
         // Logout
         document.getElementById('logoutBtn').addEventListener('click', async function() {
-            try {
-                await auth.signOut();
-            } catch (error) {
-                console.error('Logout error:', error);
+            if (confirm('🔐 Çıkış yapmak istediğinizden emin misiniz?')) {
+                try {
+                    await auth.signOut();
+                    console.log('👋 Güvenli çıkış yapıldı');
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    alert('❌ Çıkış hatası: ' + error.message);
+                }
             }
         });
 
@@ -796,16 +921,16 @@
             saveBtn.disabled = true;
             
             const data = {
-                netSales: parseFloat(document.getElementById('netSales').value) || 0,
-                costOfSales: parseFloat(document.getElementById('costOfSales').value) || 0,
-                adminExpenses: parseFloat(document.getElementById('adminExpenses').value) || 0,
-                ebitda: parseFloat(document.getElementById('ebitda').value) || 0,
-                netProfit: parseFloat(document.getElementById('netProfit').value) || 0,
-                currentAssets: parseFloat(document.getElementById('currentAssets').value) || 0,
-                fixedAssets: parseFloat(document.getElementById('fixedAssets').value) || 0,
-                shortTermDebt: parseFloat(document.getElementById('shortTermDebt').value) || 0,
-                longTermDebt: parseFloat(document.getElementById('longTermDebt').value) || 0,
-                equity: parseFloat(document.getElementById('equity').value) || 0,
+                netSales: getNumericValue(document.getElementById('netSales')) || 0,
+                costOfSales: getNumericValue(document.getElementById('costOfSales')) || 0,
+                adminExpenses: getNumericValue(document.getElementById('adminExpenses')) || 0,
+                ebitda: getNumericValue(document.getElementById('ebitda')) || 0,
+                netProfit: getNumericValue(document.getElementById('netProfit')) || 0,
+                currentAssets: getNumericValue(document.getElementById('currentAssets')) || 0,
+                fixedAssets: getNumericValue(document.getElementById('fixedAssets')) || 0,
+                shortTermDebt: getNumericValue(document.getElementById('shortTermDebt')) || 0,
+                longTermDebt: getNumericValue(document.getElementById('longTermDebt')) || 0,
+                equity: getNumericValue(document.getElementById('equity')) || 0,
                 lastUpdated: new Date().toISOString()
             };
 
@@ -934,7 +1059,8 @@
             Object.keys(data).forEach(key => {
                 const element = document.getElementById(key);
                 if (element && typeof data[key] === 'number') {
-                    element.value = data[key];
+                    // Sayıyı formatla ve inputa yaz
+                    element.value = data[key].toLocaleString('tr-TR');
                 }
             });
         }
@@ -947,16 +1073,16 @@
                 data = financialData[currentUser];
             } else {
                 data = {
-                    netSales: parseFloat(document.getElementById('netSales').value) || 0,
-                    costOfSales: parseFloat(document.getElementById('costOfSales').value) || 0,
-                    adminExpenses: parseFloat(document.getElementById('adminExpenses').value) || 0,
-                    ebitda: parseFloat(document.getElementById('ebitda').value) || 0,
-                    netProfit: parseFloat(document.getElementById('netProfit').value) || 0,
-                    currentAssets: parseFloat(document.getElementById('currentAssets').value) || 0,
-                    fixedAssets: parseFloat(document.getElementById('fixedAssets').value) || 0,
-                    shortTermDebt: parseFloat(document.getElementById('shortTermDebt').value) || 0,
-                    longTermDebt: parseFloat(document.getElementById('longTermDebt').value) || 0,
-                    equity: parseFloat(document.getElementById('equity').value) || 0
+                    netSales: getNumericValue(document.getElementById('netSales')) || 0,
+                    costOfSales: getNumericValue(document.getElementById('costOfSales')) || 0,
+                    adminExpenses: getNumericValue(document.getElementById('adminExpenses')) || 0,
+                    ebitda: getNumericValue(document.getElementById('ebitda')) || 0,
+                    netProfit: getNumericValue(document.getElementById('netProfit')) || 0,
+                    currentAssets: getNumericValue(document.getElementById('currentAssets')) || 0,
+                    fixedAssets: getNumericValue(document.getElementById('fixedAssets')) || 0,
+                    shortTermDebt: getNumericValue(document.getElementById('shortTermDebt')) || 0,
+                    longTermDebt: getNumericValue(document.getElementById('longTermDebt')) || 0,
+                    equity: getNumericValue(document.getElementById('equity')) || 0
                 };
             }
             
@@ -1243,16 +1369,16 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                 data = financialData[currentUser];
             } else {
                 data = {
-                    netSales: parseFloat(document.getElementById('netSales').value) || 0,
-                    costOfSales: parseFloat(document.getElementById('costOfSales').value) || 0,
-                    adminExpenses: parseFloat(document.getElementById('adminExpenses').value) || 0,
-                    ebitda: parseFloat(document.getElementById('ebitda').value) || 0,
-                    netProfit: parseFloat(document.getElementById('netProfit').value) || 0,
-                    currentAssets: parseFloat(document.getElementById('currentAssets').value) || 0,
-                    fixedAssets: parseFloat(document.getElementById('fixedAssets').value) || 0,
-                    shortTermDebt: parseFloat(document.getElementById('shortTermDebt').value) || 0,
-                    longTermDebt: parseFloat(document.getElementById('longTermDebt').value) || 0,
-                    equity: parseFloat(document.getElementById('equity').value) || 0
+                    netSales: getNumericValue(document.getElementById('netSales')) || 0,
+                    costOfSales: getNumericValue(document.getElementById('costOfSales')) || 0,
+                    adminExpenses: getNumericValue(document.getElementById('adminExpenses')) || 0,
+                    ebitda: getNumericValue(document.getElementById('ebitda')) || 0,
+                    netProfit: getNumericValue(document.getElementById('netProfit')) || 0,
+                    currentAssets: getNumericValue(document.getElementById('currentAssets')) || 0,
+                    fixedAssets: getNumericValue(document.getElementById('fixedAssets')) || 0,
+                    shortTermDebt: getNumericValue(document.getElementById('shortTermDebt')) || 0,
+                    longTermDebt: getNumericValue(document.getElementById('longTermDebt')) || 0,
+                    equity: getNumericValue(document.getElementById('equity')) || 0
                 };
             }
             
@@ -1312,8 +1438,8 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                                 </div>
                             </div>
                             <div class="text-center mt-4">
-                                <p class="text-sm font-semibold text-gray-800">Gemini AI Analizi Hazırlanıyor...</p>
-                                <p class="text-xs text-gray-600 mt-1">Finansal verileriniz profesyonel olarak analiz ediliyor</p>
+                                <p class="text-sm font-semibold text-gray-800">Akça Pro X AI Analizi Hazırlanıyor...</p>
+                                <p class="text-xs text-gray-600 mt-1">Finansal verileriniz Akça Pro X ile analiz ediliyor</p>
                                 <div class="flex justify-center mt-2 space-x-1">
                                     <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
                                     <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse" style="animation-delay: 0.1s;"></div>
@@ -1338,7 +1464,7 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                                     <span class="text-2xl">🤖</span>
                                     <div>
                                         <h3 class="text-sm font-bold text-blue-900">Akça Pro X AI Finansal Analizi</h3>
-                                        <p class="text-xs text-blue-700">Google AI ile Güçlendirilmiş Profesyonel Analiz</p>
+                                        <p class="text-xs text-blue-700">Akça Pro X ile Güçlendirilmiş Profesyonel Analiz</p>
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-1">
@@ -1355,7 +1481,7 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                                 </div>
                             </div>
                             <div class="mt-2 flex items-center justify-between text-xs text-blue-600">
-                                <span>📊 Profesyonel finansal danışmanlık analizi</span>
+                                <span>📊 Akça Pro X finansal danışmanlık analizi</span>
                                 <span>⏱️ ${new Date().toLocaleTimeString('tr-TR')}</span>
                             </div>
                         </div>
@@ -1509,7 +1635,10 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
             const data = scenarios[scenarioNumber];
             Object.keys(data).forEach(key => {
                 const element = document.getElementById(key);
-                if (element) element.value = data[key];
+                if (element) {
+                    // Sayıyı formatla ve inputa yaz
+                    element.value = data[key].toLocaleString('tr-TR');
+                }
             });
             alert(`📚 Senaryo ${scenarioNumber} yüklendi!`);
         }

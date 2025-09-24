@@ -41,6 +41,21 @@
     </style>
 </head>
 <body class="bg-gray-50">
+
+    <!-- Firebase Status Alert -->
+    <div id="firebaseAlert" class="hidden fixed top-0 left-0 right-0 z-50 bg-red-600 text-white p-2 text-center text-xs">
+        <div class="container mx-auto flex items-center justify-between">
+            <div>
+                <strong>⚠️ Firebase Hatası:</strong> 
+                <span id="firebaseAlertText">Identity Toolkit API etkinleştirilmemiş</span>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="openFirebaseConsole()" class="bg-red-800 hover:bg-red-900 px-2 py-1 rounded text-xs">Çözüm</button>
+                <button onclick="useOfflineMode()" class="bg-gray-600 hover:bg-gray-700 px-2 py-1 rounded text-xs">Offline</button>
+                <button onclick="hideFirebaseAlert()" class="text-red-200 hover:text-white">×</button>
+            </div>
+        </div>
+    </div>
     <!-- Login Screen -->
     <div id="loginScreen" class="min-h-screen gradient-bg flex items-center justify-center p-2">
         <div class="bg-white rounded-lg shadow-lg p-4 w-full max-w-sm">
@@ -353,31 +368,57 @@
             return parseFloat(input.value.replace(/[^0-9-]/g, '')) || 0;
         }
 
-        // Firebase Configuration - UPDATED
+        // Firebase Configuration - CORRECTED FOR PROJECT 731776781989
         const firebaseConfig = {
-            apiKey: "AIzaSyAF8ZcI4lYPjnojma094lo_orSfX8I9Fh8",
+            apiKey: "AIzaSyAF8ZcI4lYPjnojma094lo_orSfX8I9Fh8", // Gemini AI key'i kullanıyoruz
             authDomain: "analizprox-62e8d.firebaseapp.com",
-            projectId: "analizprox-62e8d",
+            projectId: "analizprox-62e8d", 
             databaseURL: "https://analizprox-62e8d-default-rtdb.europe-west1.firebasedatabase.app/",
             storageBucket: "analizprox-62e8d.appspot.com",
-            messagingSenderId: "564589247382",
-            appId: "1:564589247382:web:c8f4e9d5a1b2c3d4e5f6g7"
+            messagingSenderId: "731776781989", // DÜZELTME: Hata mesajından gelen gerçek proje numarası
+            appId: "1:731776781989:web:c8f4e9d5a1b2c3d4e5f6g7" // DÜZELTME: Doğru proje numarası ile
         };
         
-        // Firebase'i başlat
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const rtdb = firebase.database();
-        const googleProvider = new firebase.auth.GoogleAuthProvider();
+        // OFFLINE MODE SWITCH - TEMPORARY BYPASS FOR FIREBASE ISSUES
+        const FORCE_OFFLINE_MODE = localStorage.getItem('forceOfflineMode') === 'true' || false; // localStorage kontrolü
+        let firebaseConnected = false;
         
-        // Google provider ayarları - ENHANCED
-        googleProvider.addScope('email');
-        googleProvider.addScope('profile');
-        googleProvider.setCustomParameters({
-            'prompt': 'select_account',
-            'hd': '' // Tüm domainlere izin ver
-        });
+        // Firebase'i başlat
+        if (!FORCE_OFFLINE_MODE) {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                const auth = firebase.auth();
+                const db = firebase.firestore();
+                const rtdb = firebase.database();
+                const googleProvider = new firebase.auth.GoogleAuthProvider();
+                
+                // Google provider ayarları - ENHANCED
+                googleProvider.addScope('email');
+                googleProvider.addScope('profile');
+                googleProvider.setCustomParameters({
+                    'prompt': 'select_account',
+                    'hd': '' // Tüm domainlere izin ver
+                });
+                
+                console.log('🔥 Firebase başlatıldı:', firebaseConfig.projectId);
+            } catch (initError) {
+                console.error('🔴 Firebase başlatma hatası:', initError);
+                console.warn('💾 Offline mode etkinleştirildi');
+                
+                // Firebase hatası için alert göster
+                setTimeout(() => {
+                    if (initError.code && initError.code.includes('identity-toolkit')) {
+                        showFirebaseAlert('Identity Toolkit API etkinleştirilmemiş!');
+                    } else if (initError.message.includes('API')) {
+                        showFirebaseAlert('Firebase API hatası: ' + initError.message);
+                    } else {
+                        showFirebaseAlert('Firebase bağlantı sorunu');
+                    }
+                }, 1000);
+            }
+        } else {
+            console.log('🔄 Manuel offline mode aktif - Firebase atlanıyor');
+        }
         
         console.log('🔥 Firebase başlatıldı:', firebaseConfig.projectId);
 
@@ -389,7 +430,6 @@
         let userProfile = null;
         let aiAnalysisEnabled = true;
         let previousData = null;
-        let firebaseConnected = false;
 
         // Firebase Connection Test - ENHANCED
         async function testFirebaseConnection() {
@@ -573,7 +613,7 @@
                 }
                 
             } catch (error) {
-                console.error('Google giriş hatası:', error);
+                console.error('❌ Google giriş hatası:', error.code, error.message);
                 let errorMessage = 'Google giriş hatası: ';
                 
                 if (error.code === 'auth/popup-closed-by-user') {
@@ -582,11 +622,32 @@
                     errorMessage = 'İnternet bağlantısı hatası. Bağlantınızı kontrol edin.';
                 } else if (error.code === 'auth/popup-blocked') {
                     errorMessage = 'Pop-up engellendi. Tarayıcınızda pop-up\'ları etkinleştirin.';
+                } else if (error.code && error.code.includes('identity-toolkit-api-has-not-been-used')) {
+                    errorMessage = '🔧 Firebase yapılandırması eksik!\n\n' +
+                                 'Identity Toolkit API etkinleştirilmeli:\n' +
+                                 '1. Firebase Console\'a gidin\n' +
+                                 '2. Authentication bölümünü açın\n' +
+                                 '3. Sign-in method\'u etkinleştirin\n' +
+                                 '4. Google provider\'ı etkinleştirin\n\n' +
+                                 'Alternatif: Offline mod ile devam edin.';
+                } else if (error.code && error.code.includes('api-key-not-valid')) {
+                    errorMessage = '🔑 Firebase API anahtarı geçersiz!\nLütfen Firebase Console\'dan doğru API anahtarını alın.';
+                } else if (error.code && error.code.includes('project-not-found')) {
+                    errorMessage = '📁 Firebase projesi bulunamadı!\nProje ID\'sini kontrol edin: analizprox-62e8d';
                 } else {
                     errorMessage += error.message;
                 }
                 
-                alert('❌ ' + errorMessage);
+                // Detaylı hata göster
+                if (error.code && error.code.includes('identity-toolkit')) {
+                    alert('🚨 Firebase Authentication Hatası!\n\n' + 
+                          errorMessage + '\n\n' +
+                          '💡 ŞİMDİLİK ÇÖZ:\n' +
+                          'Sayfayı yenileyin ve offline modda çalışmayı deneyin.\n\n' +
+                          '🔗 Firebase Console: console.firebase.google.com');
+                } else {
+                    alert('❌ ' + errorMessage);
+                }
                 
             } finally {
                 googleSignInBtn.disabled = false;
@@ -1951,6 +2012,27 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
         window.viewCompanyDetails = viewCompanyDetails;
         window.viewCompanyFinancials = viewCompanyFinancials;
         window.deleteCompany = deleteCompany;
+        
+        // Firebase Alert Functions
+        window.showFirebaseAlert = function(message) {
+            document.getElementById('firebaseAlertText').textContent = message;
+            document.getElementById('firebaseAlert').classList.remove('hidden');
+        };
+        
+        window.hideFirebaseAlert = function() {
+            document.getElementById('firebaseAlert').classList.add('hidden');
+        };
+        
+        window.openFirebaseConsole = function() {
+            window.open('https://console.firebase.google.com/project/analizprox-62e8d/authentication', '_blank');
+        };
+        
+        window.useOfflineMode = function() {
+            // FORCE_OFFLINE_MODE'u true yap
+            localStorage.setItem('forceOfflineMode', 'true');
+            alert('Offline mod etkinleştirildi. Sayfa yenileniyor...');
+            location.reload();
+        };
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98417ed5229d23b1',t:'MTc1ODcwODY2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

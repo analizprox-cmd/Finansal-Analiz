@@ -616,79 +616,105 @@
                 return;
             }
             
+            googleSignInBtn.disabled = true;
+            googleSignInBtn.innerHTML = '<span>🔄 Google\'a bağlanıyor...</span>';
+            
             try {
-                googleSignInBtn.disabled = true;
-                googleSignInBtn.innerHTML = '<span>🔄 Google\'a bağlanıyor...</span>';
-                
-                // Gerçek Google sign in
+                // Google Authentication
                 const result = await auth.signInWithPopup(googleProvider);
                 const user = result.user;
                 window.__googleSignedIn = true;
                 
                 console.log('✅ Google giriş başarılı:', user.email);
                 
-                // Firebase'de kullanıcı profili kontrol et (offline handling ile)
-                let userDoc = null;
+                // Kullanıcı profili kontrolü - offline-safe
                 let userProfile = null;
+                let profileFound = false;
                 
-                try {
-                    // Try Firestore first
-                    userDoc = await db.collection('users').doc(user.uid).get();
-                    if (userDoc.exists) {
-                        userProfile = userDoc.data();
-                        console.log('✅ Firestore\'dan kullanıcı profili bulundu');
+                // 1. Firestore kontrol et (offline-safe)
+                if (!profileFound) {
+                    try {
+                        const userDoc = await db.collection('users').doc(user.uid).get();
+                        if (userDoc.exists) {
+                            userProfile = userDoc.data();
+                            profileFound = true;
+                            console.log('✅ Firestore\'dan kullanıcı profili yüklendi');
+                        }
+                    } catch (firestoreError) {
+                        console.warn('⚠️ Firestore erişim hatası (devam ediliyor):', firestoreError.code);
+                        // Hata mesajı göstermiyoruz, sadece devam ediyoruz
                     }
-                } catch (firestoreError) {
-                    console.warn('⚠️ Firestore offline, Realtime Database deneniyor:', firestoreError.message);
-                    
-                    // Try Realtime Database if Firestore is offline
+                }
+                
+                // 2. Realtime Database kontrol et
+                if (!profileFound) {
                     try {
                         const snapshot = await rtdb.ref(`users/${user.uid}`).once('value');
                         if (snapshot.exists()) {
                             userProfile = snapshot.val();
-                            console.log('✅ Realtime Database\'den kullanıcı profili bulundu');
+                            profileFound = true;
+                            console.log('✅ Realtime Database\'den kullanıcı profili yüklendi');
                         }
                     } catch (rtdbError) {
-                        console.warn('⚠️ Realtime Database hatası:', rtdbError.message);
-                        
-                        // Try localStorage as final fallback
-                        const localProfile = localStorage.getItem(`userProfile_${user.uid}`);
-                        if (localProfile) {
-                            userProfile = JSON.parse(localProfile);
-                            console.log('✅ localStorage\'dan kullanıcı profili bulundu');
-                        }
+                        console.warn('⚠️ Realtime Database erişim hatası (devam ediliyor):', rtdbError.code);
+                        // Hata mesajı göstermiyoruz, sadece devam ediyoruz
                     }
                 }
                 
-                if (userProfile) {
-                    // Mevcut kullanıcı - direkt dashboard
+                // 3. LocalStorage kontrol et (final fallback)
+                if (!profileFound) {
+                    try {
+                        const localProfile = localStorage.getItem(`userProfile_${user.uid}`);
+                        if (localProfile) {
+                            userProfile = JSON.parse(localProfile);
+                            profileFound = true;
+                            console.log('✅ localStorage\'dan kullanıcı profili yüklendi');
+                        }
+                    } catch (localError) {
+                        console.warn('⚠️ localStorage erişim hatası:', localError.message);
+                    }
+                }
+                
+                // Kullanıcı durumuna göre yönlendirme
+                if (profileFound && userProfile) {
+                    // Mevcut kullanıcı - dashboard'a yönlendir
                     window.userProfile = userProfile;
                     document.getElementById('currentCompany').textContent = userProfile.companyName || 'Bilinmeyen Şirket';
                     showDashboard();
-                    await loadUserData();
+                    
+                    // Veri yüklemeyi sessizce dene (hata gösterme)
+                    try {
+                        await loadUserData();
+                    } catch (loadError) {
+                        console.warn('⚠️ Veri yükleme hatası (görmezden geliniyor):', loadError.message);
+                        // Kullanıcıya hata göstermiyoruz, varsayılan verilerle devam ediyor
+                    }
                 } else {
                     // Yeni kullanıcı - hesap kurulumu gerekli
                     console.log('🆕 Yeni kullanıcı, hesap kurulumu gerekli');
                     showAccountSetup();
                 }
                 
-            } catch (error) {
-                console.error('Google giriş hatası:', error);
-                let errorMessage = 'Google giriş hatası: ';
+            } catch (authError) {
+                // Sadece Google Authentication hataları için mesaj göster
+                console.error('❌ Google Authentication hatası:', authError);
+                let errorMessage = '';
                 
-                if (error.code === 'auth/popup-closed-by-user') {
+                if (authError.code === 'auth/popup-closed-by-user') {
                     errorMessage = 'Giriş iptal edildi. Lütfen tekrar deneyin.';
-                } else if (error.code === 'auth/network-request-failed') {
+                } else if (authError.code === 'auth/network-request-failed') {
                     errorMessage = 'İnternet bağlantısı hatası. Bağlantınızı kontrol edin.';
-                } else if (error.code === 'auth/popup-blocked') {
+                } else if (authError.code === 'auth/popup-blocked') {
                     errorMessage = 'Pop-up engellendi. Tarayıcınızda pop-up\'ları etkinleştirin.';
-                } else if (error.message && error.message.includes('offline')) {
-                    errorMessage = 'Firebase şu anda çevrimdışı. Lütfen daha sonra tekrar deneyin.';
+                } else if (authError.code === 'auth/cancelled-popup-request') {
+                    errorMessage = 'Giriş işlemi iptal edildi.';
                 } else {
-                    errorMessage += error.message;
+                    errorMessage = 'Google giriş hatası. Lütfen tekrar deneyin.';
                 }
                 
-                alert('❌ ' + errorMessage);
+                if (errorMessage) {
+                    alert('❌ ' + errorMessage);
+                }
                 
             } finally {
                 googleSignInBtn.disabled = false;
@@ -1158,64 +1184,80 @@
             }
         });
 
-        // Load User Data
+        // Load User Data - Silent mode (no error alerts)
         async function loadUserData() {
             if (!currentUser || currentUser === 'süper admin') return;
             
             try {
                 let data = null;
+                let dataLoaded = false;
                 
-                // Try Firebase with proper offline handling
-                try {
-                    if (firebaseConnected) {
-                        // Try Firestore first with offline handling
-                        try {
-                            const docRef = db.collection('financialData').doc(currentUser);
-                            const doc = await docRef.get();
-                            if (doc.exists) {
-                                data = doc.data();
-                                console.log('📊 Firestore\'dan veri yüklendi');
-                            }
-                        } catch (firestoreError) {
-                            console.warn('⚠️ Firestore offline, Realtime Database deneniyor:', firestoreError.message);
-                            
-                            // Firestore offline, try Realtime Database
-                            try {
-                                const snapshot = await rtdb.ref(`financialData/${currentUser}`).once('value');
-                                if (snapshot.exists()) {
-                                    data = snapshot.val();
-                                    console.log('📊 Realtime DB\'dan veri yüklendi');
-                                }
-                            } catch (rtdbError) {
-                                console.warn('⚠️ Realtime Database hatası:', rtdbError.message);
-                                throw rtdbError; // Re-throw to trigger localStorage fallback
-                            }
+                // 1. Try Firestore first (silent)
+                if (!dataLoaded) {
+                    try {
+                        const docRef = db.collection('financialData').doc(currentUser);
+                        const doc = await docRef.get();
+                        if (doc.exists) {
+                            data = doc.data();
+                            dataLoaded = true;
+                            console.log('📊 Firestore\'dan veri yüklendi');
                         }
-                    }
-                } catch (error) {
-                    console.warn('📱 Firebase offline, yerel veriden yükleniyor:', error.message);
-                    
-                    // Fallback to localStorage
-                    const localData = localStorage.getItem(`financialData_${currentUser}`);
-                    if (localData) {
-                        data = JSON.parse(localData);
-                        console.log('📊 localStorage\'dan veri yüklendi');
+                    } catch (firestoreError) {
+                        console.warn('⚠️ Firestore offline (sessiz devam):', firestoreError.code);
+                        // Hata göstermiyoruz, devam ediyoruz
                     }
                 }
                 
-                if (data) {
+                // 2. Try Realtime Database (silent)
+                if (!dataLoaded) {
+                    try {
+                        const snapshot = await rtdb.ref(`financialData/${currentUser}`).once('value');
+                        if (snapshot.exists()) {
+                            data = snapshot.val();
+                            dataLoaded = true;
+                            console.log('📊 Realtime DB\'dan veri yüklendi');
+                        }
+                    } catch (rtdbError) {
+                        console.warn('⚠️ Realtime Database offline (sessiz devam):', rtdbError.code);
+                        // Hata göstermiyoruz, devam ediyoruz
+                    }
+                }
+                
+                // 3. Try localStorage (silent)
+                if (!dataLoaded) {
+                    try {
+                        const localData = localStorage.getItem(`financialData_${currentUser}`);
+                        if (localData) {
+                            data = JSON.parse(localData);
+                            dataLoaded = true;
+                            console.log('📊 localStorage\'dan veri yüklendi');
+                        }
+                    } catch (localError) {
+                        console.warn('⚠️ localStorage hatası (sessiz devam):', localError.message);
+                    }
+                }
+                
+                // Veri bulunduysa formları doldur
+                if (dataLoaded && data) {
                     if (!financialData) financialData = {};
                     financialData[currentUser] = data;
                     
-                    populateFormFields(data);
-                    updateCharts();
-                    await generateReports();
+                    try {
+                        populateFormFields(data);
+                        updateCharts();
+                        await generateReports();
+                    } catch (uiError) {
+                        console.warn('⚠️ UI güncelleme hatası (sessiz devam):', uiError.message);
+                        // UI hatası olsa bile devam ediyoruz
+                    }
                 } else {
                     console.log('📊 Yeni kullanıcı - varsayılan veriler kullanılacak');
                 }
+                
             } catch (error) {
-                console.error('❌ Veri yükleme hatası:', error);
-                // Continue with default data
+                // Sadece console'a log, kullanıcıya hata göstermiyoruz
+                console.warn('⚠️ Veri yükleme hatası (sessiz devam):', error.message);
+                // Varsayılan verilerle devam ediyoruz
             }
         }
 

@@ -358,13 +358,13 @@
 
         // Firebase Configuration - UPDATED
         const firebaseConfig = {
-            apiKey: "AIzaSyAF8ZcI4lYPjnojma094lo_orSfX8I9Fh8",
+            apiKey: "AIzaSyBh-VdQ1mLeI7lUd8f_OFcekAfmNp2G6gk",
             authDomain: "analizprox-62e8d.firebaseapp.com",
             projectId: "analizprox-62e8d",
-            databaseURL: "https://analizprox-62e8d-default-rtdb.europe-west1.firebasedatabase.app/",
-            storageBucket: "analizprox-62e8d.appspot.com",
-            messagingSenderId: "564589247382",
-            appId: "1:564589247382:web:c8f4e9d5a1b2c3d4e5f6g7"
+            databaseURL: "https://analizprox-62e8d-default-rtdb.europe-west1.firebasedatabase.app",
+            storageBucket: "analizprox-62e8d.firebasestorage.app",
+            messagingSenderId: "230113746168",
+            appId: "1:230113746168:web:01d6c96494553e250f2f0d"
         };
         
         // Firebase'i başlat

@@ -5,313 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finansal Analiz</title>
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
-    
-    <!-- Tailwind CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    
-    <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; font-size: 12px; }
-        .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        .chart-container { position: relative; height: 120px; margin: 5px 0; }
-        .compact-input { padding: 4px 8px; font-size: 11px; }
-        .compact-card { padding: 8px; }
-        .section { display: none; }
-        .section.active { display: block; }
-        .hidden { display: none !important; }
-        .tab-btn { padding: 6px 12px; font-size: 11px; border-radius: 4px; margin: 2px; }
-        .tab-btn.active { background: #3b82f6; color: white; }
-        .tab-btn:not(.active) { background: #e5e7eb; color: #374151; }
-        .mini-card { padding: 6px; margin: 4px 0; border-radius: 6px; }
-        .text-xs { font-size: 10px; }
-        .text-sm { font-size: 11px; }
-        /* Layout container to center and constrain dashboard width */
-        .container { max-width: 1200px; margin-left: auto; margin-right: auto; padding-left: 0.75rem; padding-right: 0.75rem; }
-        @media (max-width: 640px) {
-            .chart-container { height: 100px; }
-            .compact-card { padding: 6px; }
-            .text-xs { font-size: 9px; }
-        }
-    </style>
-</head>
-<body class="bg-gray-50">
-    <!-- Login Screen -->
-    <div id="loginScreen" class="min-h-screen gradient-bg flex items-center justify-center p-3 sm:p-4">
-        <div class="bg-white rounded-lg shadow-lg p-4 sm:p-5 w-full max-w-sm">
-            <div class="text-center mb-4">
-                <h1 class="text-lg font-bold text-gray-800">💰 Finansal Analiz</h1>
-                <p class="text-xs text-gray-600">Anlık yapay zeka destekli finansal analiz yorumlaması</p>
-                <p class="text-xs text-gray-600 mt-1">Güvenli Giriş</p>
-            </div>
-            
-            <!-- Important Info -->
-            <div class="bg-amber-50 border border-amber-300 rounded p-3 mb-3">
-                <div class="flex items-start space-x-2">
-                    <span class="text-amber-600">⚠️</span>
-                    <div class="flex-1">
-                        <h3 class="text-xs font-bold text-amber-800 mb-1">Önemli Bilgi</h3>
-                        <div class="text-xs text-amber-700 space-y-1">
-                            <p>• Google hesabınızla giriş yapınız</p>
-                            <p>• Veriler Firebase'de güvenle saklanır</p>
-                            <p>• Veri güvenliği Google Firebase sorumluluğundadır</p>
-                        </div>
-                        
-                        <div class="mt-2 p-2 bg-white rounded border">
-                            <label class="flex items-start space-x-2 cursor-pointer">
-                                <input type="checkbox" id="termsAccepted" required class="mt-0.5 w-3 h-3">
-                                <span class="text-xs text-amber-800">
-                                    <strong>Zorunlu:</strong> Yukarıdaki bilgileri okudum ve kabul ediyorum.
-                                </span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <!-- Firebase SDK (Modular) -->
+    <script type="module">
+      // Import the functions you need from the SDKs you need
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+      import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+      import { getFirestore, doc, getDoc, setDoc, serverTimestamp, collection, getDocs, writeBatch, query, where, orderBy, limit, startAfter, endBefore, limitToLast, deleteDoc, updateDoc, FieldValue } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+      import { getDatabase, ref, onValue, off, set as rtdbSet, serverTimestamp as rtdbServerTimestamp, remove as rtdbRemove } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js";
+      // Note: GoogleGenerativeAI is not a standard Firebase module, keeping its import separate if needed.
+      // import { GoogleGenerativeAI } from "https://esm.run/@google/generative-ai";
 
-            <!-- Login/Register Toggle -->
-            <div class="flex mb-3">
-                <button id="loginTab" class="flex-1 py-2 px-3 text-xs font-semibold bg-blue-600 text-white rounded-l">Giriş Yap</button>
-                <button id="registerTab" class="flex-1 py-2 px-3 text-xs font-semibold bg-gray-300 text-gray-700 rounded-r">Kayıt Ol</button>
-            </div>
-
-            <!-- Login Form -->
-            <div id="loginForm" class="space-y-2">
-                <button id="googleSignInBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-3 rounded text-xs flex items-center justify-center space-x-2">
-                    <span>🔑 Google ile Giriş</span>
-                </button>
-                <div id="googleHint" class="text-[10px] text-center text-gray-500 mt-1 hidden">Önce Google ile giriş yapmanız gerekir.</div>
-                
-                <div class="text-center text-xs text-gray-500">veya</div>
-                
-                <form id="companyLoginForm" class="space-y-2">
-                    <input type="text" id="loginCompanyName" placeholder="Şirket Adı" required class="w-full compact-input border rounded">
-                    <input type="password" id="loginPassword" placeholder="Şifre" required class="w-full compact-input border rounded">
-                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-xs">Şirket Girişi</button>
-                </form>
-            </div>
-
-            <!-- Register Form -->
-            <div id="registerForm" class="space-y-2 hidden">
-                <form id="companyRegisterForm" class="space-y-2">
-                    <input type="text" id="registerCompanyName" placeholder="Şirket Adı *" required class="w-full compact-input border rounded">
-                    <input type="email" id="registerEmail" placeholder="E-posta Adresi *" required class="w-full compact-input border rounded">
-                    <input type="password" id="registerPassword" placeholder="Şifre (min 6 karakter) *" required minlength="6" class="w-full compact-input border rounded">
-                    <input type="password" id="registerPasswordConfirm" placeholder="Şifre Tekrar *" required class="w-full compact-input border rounded">
-                    
-                    <select id="registerSector" required class="w-full compact-input border rounded">
-                        <option value="">Sektör Seçin *</option>
-                        <option value="teknoloji">Teknoloji</option>
-                        <option value="imalat">İmalat</option>
-                        <option value="hizmet">Hizmet</option>
-                        <option value="ticaret">Ticaret</option>
-                        <option value="finans">Finans</option>
-                        <option value="sağlık">Sağlık</option>
-                        <option value="eğitim">Eğitim</option>
-                        <option value="inşaat">İnşaat</option>
-                        <option value="turizm">Turizm</option>
-                        <option value="diğer">Diğer</option>
-                    </select>
-                    
-                    <select id="registerEmployeeCount" required class="w-full compact-input border rounded">
-                        <option value="">Çalışan Sayısı *</option>
-                        <option value="1-10">1-10 Kişi</option>
-                        <option value="11-50">11-50 Kişi</option>
-                        <option value="51-250">51-250 Kişi</option>
-                        <option value="251-1000">251-1000 Kişi</option>
-                        <option value="1000+">1000+ Kişi</option>
-                    </select>
-                    
-                    <input type="text" id="registerPhone" placeholder="Telefon (Opsiyonel)" class="w-full compact-input border rounded">
-                    
-                    <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded text-xs font-semibold">🏢 Şirket Kaydı Oluştur</button>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Account Setup Modal -->
-    <div id="accountSetupModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-50">
-        <div class="bg-white rounded-lg p-4 w-full max-w-sm">
-            <h2 class="text-sm font-bold mb-3">Hesap Kurulumu</h2>
-            <form id="accountSetupForm" class="space-y-3">
-                <input type="text" id="setupCompanyName" placeholder="Şirket Adı" required class="w-full compact-input border rounded">
-                <select id="setupSector" required class="w-full compact-input border rounded">
-                    <option value="">Sektör Seçin</option>
-                    <option value="teknoloji">Teknoloji</option>
-                    <option value="imalat">İmalat</option>
-                    <option value="hizmet">Hizmet</option>
-                    <option value="ticaret">Ticaret</option>
-                    <option value="finans">Finans</option>
-                    <option value="diğer">Diğer</option>
-                </select>
-                <select id="setupEmployeeCount" required class="w-full compact-input border rounded">
-                    <option value="">Çalışan Sayısı</option>
-                    <option value="1-10">1-10</option>
-                    <option value="11-50">11-50</option>
-                    <option value="51-250">51-250</option>
-                    <option value="250+">250+</option>
-                </select>
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded text-xs">Hesabı Tamamla</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Main Dashboard -->
-    <div id="dashboard" class="hidden min-h-screen bg-gray-50">
-        <!-- Compact Header -->
-        <header class="bg-white shadow-sm border-b">
-            <div class="container py-2 flex items-center justify-between">
-                <div>
-                    <h1 class="text-sm font-bold text-gray-800">💰 Finansal Analiz</h1>
-                    <p class="text-xs text-gray-600 mt-0.5">Anlık yapay zeka destekli finansal analiz yorumlaması</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <span id="currentCompany" class="text-xs text-gray-600 hidden sm:block"></span>
-                    <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">Çıkış</button>
-                </div>
-            </div>
-        </header>
-
-        <!-- Tab Navigation -->
-        <div class="bg-white border-b">
-            <div class="container p-2 flex flex-wrap justify-center">
-                <button class="tab-btn active" data-section="dataEntry">📊 Veri</button>
-                <button class="tab-btn" data-section="reports">📋 Rapor</button>
-                <button id="superAdminTab" class="tab-btn hidden" data-section="superAdmin">👑 Admin</button>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-    <main class="container p-3 sm:p-4 space-y-3">
-            <!-- Data Entry Section -->
-            <div id="dataEntrySection" class="section active">
-                <div class="bg-white rounded-lg shadow compact-card mb-2">
-                    <div class="flex items-center justify-between mb-3">
-                        <h2 class="text-sm font-bold text-gray-800">Finansal Veri Girişi</h2>
-                        <div class="flex items-center space-x-1">
-                            <label class="flex items-center cursor-pointer">
-                                <input type="checkbox" id="aiToggle" checked class="sr-only">
-                                <div class="relative">
-                                    <div class="block bg-green-600 w-10 h-5 rounded-full"></div>
-                                    <div class="dot absolute left-0.5 top-0.5 bg-white w-4 h-4 rounded-full transition"></div>
-                                </div>
-                                <span class="ml-1 text-xs">🤖 Akça AI</span>
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <!-- Income Statement -->
-                        <div class="space-y-2">
-                            <h3 class="text-xs font-semibold text-gray-700 border-b pb-1">Gelir Tablosu</h3>
-                            <div class="space-y-1">
-                                <input type="text" id="netSales" placeholder="Net Satışlar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
-                                <input type="text" id="costOfSales" placeholder="Satış Maliyeti (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
-                                <input type="text" id="adminExpenses" placeholder="Yönetim Giderleri (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
-                                <input type="text" id="ebitda" placeholder="FAVÖK/EBITDA (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
-                                <input type="text" id="netProfit" placeholder="Net Kâr/Zarar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
-                            </div>
-                        </div>
-
-                        <!-- Balance Sheet -->
-                        <div class="space-y-2">
-                            <h3 class="text-xs font-semibold text-gray-700 border-b pb-1">Bilanço</h3>
-                            <div class="space-y-1">
-                                <input type="text" id="currentAssets" placeholder="Dönen Varlıklar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
-                                <input type="text" id="fixedAssets" placeholder="Duran Varlıklar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
-                                <input type="text" id="shortTermDebt" placeholder="Kısa Vadeli Borçlar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
-                                <input type="text" id="longTermDebt" placeholder="Uzun Vadeli Borçlar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
-                                <input type="text" id="equity" placeholder="Özkaynaklar (TL)" class="w-full compact-input border rounded" oninput="formatNumber(this)">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Demo Scenarios -->
-                    <div class="mt-3 flex flex-wrap gap-1">
-                        <button id="loadScenario1" class="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded text-xs">📚 S1</button>
-                        <button id="loadScenario2" class="bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded text-xs">📚 S2</button>
-                        <button id="loadScenario3" class="bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-xs">📚 S3</button>
-                        <button id="loadScenario4" class="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded text-xs">📚 S4</button>
-                    </div>
-                    
-                    <button id="saveDataBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-3 rounded font-semibold text-xs mt-3">
-                        💾 Kaydet ve Akça Pro X AI Analizi Yap
-                    </button>
-                </div>
-
-                <!-- Quick Charts - HIDDEN -->
-                <div class="grid grid-cols-2 gap-2 hidden">
-                    <div class="bg-white rounded shadow p-2">
-                        <h4 class="text-xs font-semibold mb-1">Gelir Trendi</h4>
-                        <div class="chart-container">
-                            <canvas id="revenueChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded shadow p-2">
-                        <h4 class="text-xs font-semibold mb-1">Kârlılık</h4>
-                        <div class="chart-container">
-                            <canvas id="profitChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded shadow p-2">
-                        <h4 class="text-xs font-semibold mb-1">Varlık Dağılımı</h4>
-                        <div class="chart-container">
-                            <canvas id="assetChart"></canvas>
-                        </div>
-                    </div>
-                    <div class="bg-white rounded shadow p-2">
-                        <h4 class="text-xs font-semibold mb-1">Borç Yapısı</h4>
-                        <div class="chart-container">
-                            <canvas id="debtChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Reports Section -->
-            <div id="reportsSection" class="section">
-                <div class="bg-white rounded-lg shadow compact-card">
-                    <h2 class="text-sm font-bold text-gray-800 mb-3">📋 Finansal Raporlar</h2>
-                    <div id="reportContent" class="space-y-3">
-                        <p class="text-gray-600 text-xs">Raporlar için önce veri girişi yapınız.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Super Admin Section -->
-            <div id="superAdminSection" class="section">
-                <div class="bg-white rounded-lg shadow compact-card">
-                    <h2 class="text-sm font-bold text-red-800 mb-3">👑 Süper Admin</h2>
-                    <div id="allCompaniesData" class="overflow-x-auto">
-                        <table class="min-w-full text-xs">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-1 py-1 text-left">Şirket Adı</th>
-                                    <th class="px-1 py-1 text-left">Email</th>
-                                    <th class="px-1 py-1 text-left">Giriş Tipi</th>
-                                    <th class="px-1 py-1 text-left">Durum</th>
-                                    <th class="px-1 py-1 text-left">İşlemler</th>
-                                </tr>
-                            </thead>
-                            <tbody id="companiesTableBody">
-                                <!-- Firebase data will be populated here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script>
         // Number formatting function
         function formatNumber(input) {
             // Mevcut cursor pozisyonunu al
@@ -361,18 +65,20 @@
             apiKey: "AIzaSyBh-VdQ1mLeI7lUd8f_OFcekAfmNp2G6gk",
             authDomain: "analizprox-62e8d.firebaseapp.com",
             projectId: "analizprox-62e8d",
-            databaseURL: "https://analizprox-62e8d-default-rtdb.europe-west1.firebasedatabase.app/",
+            databaseURL: "https://analizprox-62e8d-default-rtdb.europe-west1.firebasedatabase.app",
             storageBucket: "analizprox-62e8d.appspot.com",
-            messagingSenderId: "564589247382",
-            appId: "1:564589247382:web:c8f4e9d5a1b2c3d4e5f6g7"
+            messagingSenderId: "230113746168",
+            appId: "1:230113746168:web:01d6c96494553e250f2f0d",
+            measurementId: "G-KDMEE9CMB8"
         };
         
-        // Firebase'i başlat
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
-        const rtdb = firebase.database();
-        const googleProvider = new firebase.auth.GoogleAuthProvider();
+        // Firebase'i başlat (MODULAR SYNTAX)
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const rtdb = getDatabase(app);
+        const analytics = getAnalytics(app);
+        const googleProvider = new GoogleAuthProvider();
         
         // Google provider ayarları - ENHANCED
         googleProvider.addScope('email');
@@ -400,9 +106,9 @@
                 console.log('🔄 Firebase bağlantısı test ediliyor...');
                 
                 // Test Firestore
-                const testDoc = db.collection('_test').doc('connection');
-                await testDoc.set({
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                const testDocRef = doc(db, '_test', 'connection');
+                await setDoc(testDocRef, {
+                    timestamp: serverTimestamp(),
                     test: true,
                     userAgent: navigator.userAgent,
                     url: window.location.href,
@@ -410,9 +116,9 @@
                 });
                 
                 // Test Realtime Database
-                const testRef = rtdb.ref('_test/connection');
-                await testRef.set({
-                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                const testRef = ref(rtdb, '_test/connection');
+                await rtdbSet(testRef, {
+                    timestamp: rtdbServerTimestamp(),
                     test: true,
                     userAgent: navigator.userAgent,
                     url: window.location.href,
@@ -423,7 +129,7 @@
                 console.log('✅ Firebase FULL bağlantı başarılı (Auth + Firestore + Realtime DB)');
                 
                 // Test Authentication
-                auth.onAuthStateChanged((user) => {
+                onAuthStateChanged(auth, (user) => {
                     if (user) {
                         console.log('🔐 Auth durumu: Giriş yapılmış -', user.email);
                     } else {
@@ -434,8 +140,8 @@
                 // Clean up test data
                 setTimeout(async () => {
                     try {
-                        await testDoc.delete();
-                        await testRef.remove();
+                        await deleteDoc(testDocRef);
+                        await rtdbRemove(testRef);
                         console.log('🧹 Firebase test verileri temizlendi');
                     } catch (e) { 
                         console.log('Test cleanup hatası (normal):', e.message); 
@@ -476,14 +182,15 @@
         const accountSetupForm = document.getElementById('accountSetupForm');
 
         // Firebase Auth State Observer
-        auth.onAuthStateChanged(async (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 console.log('🔐 Kullanıcı oturum açtı:', user.email);
                 currentUser = user.uid;
                 
                 try {
-                    const userDoc = await db.collection('users').doc(user.uid).get();
-                    if (userDoc.exists) {
+                    const userDocRef = doc(db, 'users', user.uid);
+                    const userDoc = await getDoc(userDocRef);
+                    if (userDoc.exists()) {
                         userProfile = userDoc.data();
                         document.getElementById('currentCompany').textContent = userProfile.companyName || 'Bilinmeyen Şirket';
                         
@@ -497,8 +204,8 @@
                         await loadUserData();
                         
                         // Son giriş zamanını güncelle
-                        await db.collection('users').doc(user.uid).update({
-                            lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                        await updateDoc(userDocRef, {
+                            lastLogin: serverTimestamp(),
                             email: user.email,
                             displayName: user.displayName,
                             photoURL: user.photoURL
@@ -558,14 +265,15 @@
                 googleSignInBtn.innerHTML = '<span>🔄 Google\'a bağlanıyor...</span>';
                 
                 // Gerçek Google sign in
-                const result = await auth.signInWithPopup(googleProvider);
+                const result = await signInWithPopup(auth, googleProvider);
                 const user = result.user;
                 window.__googleSignedIn = true;
                 
                 console.log('✅ Google giriş başarılı:', user.email);
                 
                 // Firebase'de kullanıcı profili kontrol et
-                const userDoc = await db.collection('users').doc(user.uid).get();
+                const userDocRef = doc(db, 'users', user.uid);
+                const userDoc = await getDoc(userDocRef);
                 
                 if (!userDoc.exists) {
                     // Yeni kullanıcı - hesap kurulumu gerekli
@@ -695,9 +403,11 @@
                 try {
                     if (firebaseConnected) {
                         console.log('🏢 Şirket verisi Firebase\'e kaydediliyor...');
+                        const companyDocRef = doc(db, 'companies', companyId);
+                        const companyRtdbRef = ref(rtdb, `companies/${companyId}`);
                         // Save to both Firestore and Realtime Database
-                        await db.collection('companies').doc(companyId).set(companyData);
-                        await rtdb.ref(`companies/${companyId}`).set(companyData);
+                        await setDoc(companyDocRef, companyData);
+                        await rtdbSet(companyRtdbRef, companyData);
                         console.log('✅ Şirket Firebase\'e kaydedildi (Firestore + Realtime DB)');
                     }
                 } catch (error) {
@@ -785,12 +495,14 @@
                 try {
                     if (firebaseConnected) {
                         // Try Firestore first
-                        const doc = await db.collection('companies').doc(companyId).get();
-                        if (doc.exists) {
-                            companyData = doc.data();
+                        const companyDocRef = doc(db, 'companies', companyId);
+                        const docSnap = await getDoc(companyDocRef);
+                        if (docSnap.exists()) {
+                            companyData = docSnap.data();
                         } else {
                             // Try Realtime Database
-                            const snapshot = await rtdb.ref(`companies/${companyId}`).once('value');
+                            const rtdbRef = ref(rtdb, `companies/${companyId}`);
+                            const snapshot = await get(rtdbRef);
                             if (snapshot.exists()) {
                                 companyData = snapshot.val();
                             }
@@ -821,11 +533,13 @@
                 // Update last login
                 try {
                     if (firebaseConnected) {
+                        const companyDocRef = doc(db, 'companies', companyId);
+                        const companyRtdbRef = ref(rtdb, `companies/${companyId}/lastLogin`);
                         // Update in both Firestore and Realtime Database
-                        await db.collection('companies').doc(companyId).update({
-                            lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                        await updateDoc(companyDocRef, {
+                            lastLogin: serverTimestamp()
                         });
-                        await rtdb.ref(`companies/${companyId}/lastLogin`).set(firebase.database.ServerValue.TIMESTAMP);
+                        await rtdbSet(companyRtdbRef, rtdbServerTimestamp());
                     }
                 } catch (error) {
                     // Update localStorage
@@ -883,21 +597,23 @@
                     photoURL: user.photoURL,
                     sector, 
                     employeeCount,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                    lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
+                    createdAt: serverTimestamp(),
+                    lastLogin: serverTimestamp(),
                     isActive: true,
                     loginMethod: 'google'
                 };
                 
                 // Firestore'a kaydet
-                await db.collection('users').doc(user.uid).set(userProfileData);
+                const userDocRef = doc(db, 'users', user.uid);
+                await setDoc(userDocRef, userProfileData);
                 
                 // Realtime Database'e de kaydet
                 if (firebaseConnected) {
-                    await rtdb.ref(`users/${user.uid}`).set({
+                    const userRtdbRef = ref(rtdb, `users/${user.uid}`);
+                    await rtdbSet(userRtdbRef, {
                         ...userProfileData,
-                        createdAt: firebase.database.ServerValue.TIMESTAMP,
-                        lastLogin: firebase.database.ServerValue.TIMESTAMP
+                        createdAt: rtdbServerTimestamp(),
+                        lastLogin: rtdbServerTimestamp()
                     });
                 }
                 
@@ -920,7 +636,7 @@
         document.getElementById('logoutBtn').addEventListener('click', async function() {
             if (confirm('🔐 Çıkış yapmak istediğinizden emin misiniz?')) {
                 try {
-                    await auth.signOut();
+                    await signOut(auth);
                     console.log('👋 Güvenli çıkış yapıldı');
                 } catch (error) {
                     console.error('Logout error:', error);
@@ -985,13 +701,15 @@
                             console.log('💾 Veriler Firebase\'e kaydediliyor...');
                             
                             // Save to Firestore
-                            await db.collection('financialData').doc(currentUser).set({
+                            const docRef = doc(db, 'financialData', currentUser);
+                            await setDoc(docRef, {
                                 ...saveData,
-                                lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                                lastUpdated: serverTimestamp()
                             });
                             
                             // Save to Realtime Database as backup
-                            await rtdb.ref(`financialData/${currentUser}`).set(saveData);
+                            const rtdbRef = ref(rtdb, `financialData/${currentUser}`);
+                            await rtdbSet(rtdbRef, saveData);
                             
                             console.log('✅ Firebase (Firestore + Realtime DB) kayıt başarılı');
                             
@@ -1047,14 +765,15 @@
                 try {
                     if (firebaseConnected) {
                         // Try Firestore first
-                        const docRef = db.collection('financialData').doc(currentUser);
-                        const doc = await docRef.get();
-                        if (doc.exists) {
-                            data = doc.data();
+                        const docRef = doc(db, 'financialData', currentUser);
+                        const docSnap = await getDoc(docRef);
+                        if (docSnap.exists()) {
+                            data = docSnap.data();
                             console.log('📊 Firestore\'dan veri yüklendi');
                         } else {
                             // Try Realtime Database
-                            const snapshot = await rtdb.ref(`financialData/${currentUser}`).once('value');
+                            const rtdbRef = ref(rtdb, `financialData/${currentUser}`);
+                            const snapshot = await get(rtdbRef);
                             if (snapshot.exists()) {
                                 data = snapshot.val();
                                 console.log('📊 Realtime DB\'dan veri yüklendi');
@@ -1682,7 +1401,8 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                 
                 // Firebase'den Google ile giriş yapan kullanıcıları al
                 try {
-                    const usersSnapshot = await db.collection('users').orderBy('createdAt', 'desc').get();
+                    const usersQuery = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+                    const usersSnapshot = await getDocs(usersQuery);
                     usersSnapshot.forEach((doc) => {
                         const userData = doc.data();
                         allCompanies.push({
@@ -1697,7 +1417,8 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                 
                 // Firebase'den şirket kayıtlarını al
                 try {
-                    const companiesSnapshot = await db.collection('companies').orderBy('createdAt', 'desc').get();
+                    const companiesQuery = query(collection(db, 'companies'), orderBy('createdAt', 'desc'));
+                    const companiesSnapshot = await getDocs(companiesQuery);
                     companiesSnapshot.forEach((doc) => {
                         const companyData = doc.data();
                         allCompanies.push({
@@ -1761,8 +1482,9 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                 if (type === 'google') {
                     // Google kullanıcısı
                     try {
-                        const userDoc = await db.collection('users').doc(companyId).get();
-                        if (userDoc.exists) {
+                        const userDocRef = doc(db, 'users', companyId);
+                        const userDoc = await getDoc(userDocRef);
+                        if (userDoc.exists()) {
                             companyData = userDoc.data();
                         }
                     } catch (error) {
@@ -1772,8 +1494,9 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                 } else {
                     // Şirket kullanıcısı
                     try {
-                        const companyDoc = await db.collection('companies').doc(companyId).get();
-                        if (companyDoc.exists) {
+                        const companyDocRef = doc(db, 'companies', companyId);
+                        const companyDoc = await getDoc(companyDocRef);
+                        if (companyDoc.exists()) {
                             companyData = companyDoc.data();
                         }
                     } catch (error) {
@@ -1806,8 +1529,9 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                 
                 // Firebase'den finansal veriyi al
                 try {
-                    const financialDoc = await db.collection('financialData').doc(companyId).get();
-                    if (financialDoc.exists) {
+                    const financialDocRef = doc(db, 'financialData', companyId);
+                    const financialDoc = await getDoc(financialDocRef);
+                    if (financialDoc.exists()) {
                         financialData = financialDoc.data();
                     }
                 } catch (error) {
@@ -1868,11 +1592,11 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
             try {
                 if (type === 'google') {
                     // Google kullanıcısını sil
-                    await db.collection('users').doc(companyId).delete();
+                    await deleteDoc(doc(db, 'users', companyId));
                 } else {
                     // Şirket kaydını sil
                     try {
-                        await db.collection('companies').doc(companyId).delete();
+                        await deleteDoc(doc(db, 'companies', companyId));
                     } catch (error) {
                         // localStorage'dan sil
                         const companies = JSON.parse(localStorage.getItem('companies') || '{}');
@@ -1883,7 +1607,7 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
                 
                 // Finansal verileri de sil
                 try {
-                    await db.collection('financialData').doc(companyId).delete();
+                    await deleteDoc(doc(db, 'financialData', companyId));
                 } catch (error) {
                     localStorage.removeItem(`financialData_${companyId}`);
                 }
@@ -1981,5 +1705,7 @@ Türkçe, profesyonel ve anlaşılır bir dilde yanıt ver. Somut sayılar ve ö
         window.viewCompanyFinancials = viewCompanyFinancials;
         window.deleteCompany = deleteCompany;
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98417ed5229d23b1',t:'MTc1ODcwODY2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+    <!-- The script below was causing issues and is likely from a proxy/CDN, it's safer to remove it for local testing -->
+    <!-- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98417ed5229d23b1',t:'MTc1ODcwODY2Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script> -->
+</body>
 </html>
